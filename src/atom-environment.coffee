@@ -838,6 +838,9 @@ class AtomEnvironment extends Model
     initScriptPath = fs.resolve(@getConfigDirPath(), 'init', ['js', 'coffee'])
     initScriptPath ? path.join(@getConfigDirPath(), 'init.coffee')
 
+  getUserWorkingDirPath: ->
+    path.join(@getConfigDirPath(), 'code')
+
   requireUserInitScript: ->
     if userInitScriptPath = @getUserInitScriptPath()
       try

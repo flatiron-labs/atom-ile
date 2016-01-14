@@ -1,0 +1,21 @@
+'context-menu':
+  'atom-text-editor': [
+    {
+      'label': 'Toggle Learn.co Terminal'
+      'command': 'integrated-learn-environment:toggleTerminal'
+    }
+  ]
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Learn.co'
+      'submenu': [
+        {
+          'label': 'Toggle Terminal'
+          'command': 'integrated-learn-environment:toggleTerminal'
+        }
+      ]
+    ]
+  }
+]

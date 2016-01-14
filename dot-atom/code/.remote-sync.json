@@ -1,0 +1,14 @@
+{
+  "transport": "ftp",
+  "hostname": "ironboard07.fe.flatironschool.com",
+  "port": "21",
+  "username": "logantest",
+  "password": "flatironsecret",
+  "target": "./code",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "uploadOnSave": false,
+  "deleteLocal": false
+}

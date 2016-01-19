@@ -1,6 +1,7 @@
 crypto = require 'crypto'
 path = require 'path'
 ipc = require 'ipc'
+mkdirp = require 'mkdirp'
 
 _ = require 'underscore-plus'
 {deprecate} = require 'grim'
@@ -839,6 +840,7 @@ class AtomEnvironment extends Model
     initScriptPath ? path.join(@getConfigDirPath(), 'init.coffee')
 
   getUserWorkingDirPath: ->
+    mkdirp(@getConfigDirPath() + '/code')
     path.join(@getConfigDirPath(), 'code')
 
   requireUserInitScript: ->

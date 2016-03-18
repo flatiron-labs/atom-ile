@@ -10,6 +10,7 @@ fs = require 'fs-plus'
 path = require 'path'
 yargs = require 'yargs'
 console.log = require 'nslog'
+ipc = require 'ipc'
 
 start = ->
   args = parseCommandLine()
@@ -26,7 +27,10 @@ start = ->
 
   addUrlToOpen = (event, urlToOpen) ->
     event.preventDefault()
-    args.urlsToOpen.push(urlToOpen)
+    if (urlToOpen.match(/ile\-learn\-open/))
+      console.log(urlToOpen)
+    else
+      args.urlsToOpen.push(urlToOpen)
 
   app.on 'open-file', addPathToOpen
   app.on 'open-url', addUrlToOpen
@@ -35,6 +39,24 @@ start = ->
   app.on 'ready', ->
     app.removeListener 'open-file', addPathToOpen
     app.removeListener 'open-url', addUrlToOpen
+
+    ipc.on 'set-terminal-socket-connection', (event, connection) ->
+      app.terminalSocketConnection = connection
+
+    ipc.on 'get-terminal-socket-connection', (event) ->
+      if app.terminalSocketConnection
+        event.returnValue = app.terminalSocketConnection
+      else
+        event.returnValue = false
+
+    ipc.on 'set-fs-socket-connection', (event, connection) ->
+      app.fsSocketConnection = connection
+
+    ipc.on 'get-fs-socket-connection', (event) ->
+      if app.fsSocketConnection
+        event.returnValue = app.fsSocketConnection
+      else
+        event.returnValue = false
 
     AtomApplication = require path.join(args.resourcePath, 'src', 'browser', 'atom-application')
     AtomApplication.open(args)

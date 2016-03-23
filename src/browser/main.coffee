@@ -11,6 +11,7 @@ path = require 'path'
 yargs = require 'yargs'
 console.log = require 'nslog'
 ipc = require 'ipc'
+WebSocket = require('websocket').w3cwebsocket
 
 start = ->
   args = parseCommandLine()
@@ -39,24 +40,42 @@ start = ->
   app.on 'ready', ->
     app.removeListener 'open-file', addPathToOpen
     app.removeListener 'open-url', addUrlToOpen
+    app.registeredTerminals = []
 
-    ipc.on 'set-terminal-socket-connection', (event, connection) ->
-      app.terminalSocketConnection = connection
+    ipc.on 'register-new-terminal', (event, url) ->
+      if app.registeredTerminals.length == 0
+        app.registeredTerminals.push event.sender
 
-    ipc.on 'get-terminal-socket-connection', (event) ->
-      if app.terminalSocketConnection
-        event.returnValue = app.terminalSocketConnection
+        app.terminalWebSocket = new WebSocket(url)
+        app.terminalWebSocket.onmessage = (e) =>
+          for term in app.registeredTerminals
+            try
+              term.send 'terminal-message', e.data
+            catch
+              console.log 'Error sending data to term: ' + term
+
+        app.terminalWebSocket.onclose = =>
+          for term in app.registeredTerminals
+            try
+              term.send 'terminal-session-closed'
+            catch
+              console.log 'Error sending closed message to term: ' + term
+
+
       else
-        event.returnValue = false
+        app.registeredTerminals.push event.sender
 
-    ipc.on 'set-fs-socket-connection', (event, connection) ->
-      app.fsSocketConnection = connection
+        app.registeredTerminals[0].send 'request-terminal-view',
+          index: app.registeredTerminals.length - 1
 
-    ipc.on 'get-fs-socket-connection', (event) ->
-      if app.fsSocketConnection
-        event.returnValue = app.fsSocketConnection
-      else
-        event.returnValue = false
+    ipc.on 'terminal-view-response', (event, response) ->
+      app.registeredTerminals[response.index].send 'update-terminal-view', response.html
+
+    ipc.on 'terminal-data', (event, data) ->
+      app.terminalWebSocket.send data
+
+    ipc.on 'deactivate-terminal', (event) ->
+      app.registeredTerminals = app.registeredTerminals.filter((el) -> el != event.sender)
 
     AtomApplication = require path.join(args.resourcePath, 'src', 'browser', 'atom-application')
     AtomApplication.open(args)

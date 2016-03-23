@@ -12,6 +12,12 @@ yargs = require 'yargs'
 console.log = require 'nslog'
 ipc = require 'ipc'
 WebSocket = require('websocket').w3cwebsocket
+mkdirp     = require 'mkdirp'
+execSync   = require('child_process').execSync
+spawn      = require('child_process').spawnSync
+crossSpawn = require('cross-spawn').spawn
+rmdir      = require 'rimraf'
+utf8       = require 'utf8'
 
 start = ->
   args = parseCommandLine()
@@ -41,6 +47,97 @@ start = ->
     app.removeListener 'open-file', addPathToOpen
     app.removeListener 'open-url', addUrlToOpen
     app.registeredTerminals = []
+    app.registeredFsConnections = []
+    app.sep = if /^win/.test(process.platform) then '\\' else '/'
+    app.isWindows = if app.sep == '\\' then true else false
+
+    fs.makeTreeSync(process.env.ATOM_HOME + '/code')
+    app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
+
+    ipc.on 'register-new-fs-connection', (event, url) =>
+      if app.registeredFsConnections.length == 0
+        app.registeredFsConnections.push event.sender
+
+        app.fsWebSocket = new WebSocket(url)
+
+        app.fsWebSocket.onmessage = (e) =>
+          try
+            event = JSON.parse(e.data)
+
+            if !(event.location.match(/node_modules/) || event.file.match(/node_modules/))
+              switch event.event
+                when 'remote_create'
+                  if event.directory
+                    if app.isWindows
+                      execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+                    else
+                      fs.makeTreeSync(app.workingDirPath + app.sep + event.location + app.sep + event.file)
+                  else
+                    fs.makeTreeSync(app.workingDirPath + app.sep + event.location)
+
+                    fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
+
+                    app.fsWebSocket.send JSON.stringify({
+                      action: 'request_content',
+                      location: event.location,
+                      file: event.file
+                    })
+                when 'content_response'
+                  content = new Buffer(event.content, 'base64').toString()
+                  fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, utf8.decode(content)
+                when 'remote_delete'
+                  if event.directory
+                    if app.isWindows
+                      rmdir app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, (error) ->
+                        remoteErr(error, 'RMDIR ERROR:')
+                    else
+                      if event.location.length
+                        deleteDirectoryRecursive app.workingDirPath + app.sep + event.location + app.sep + event.file
+                      else
+                        deleteDirectoryRecursive app.workingDirPath + app.sep + event.file
+                  else
+                    delPath = app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file
+
+                    if fs.existsSync(delPath)
+                      fs.unlinkSync(delPath)
+                when 'remote_move_from'
+                  remoteLog('move_from')
+                when 'remote_move_to'
+                  remoteLog('move_to')
+                when 'remote_modify'
+                  if !event.directory
+                    if app.isWindows
+                      execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location))
+                    else
+                      mkdirp.sync(app.workingDirPath + app.sep + event.location)
+
+                    fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
+
+                    app.fsWebSocket.send JSON.stringify({
+                      action: 'request_content',
+                      location: event.location,
+                      file: event.file
+                    })
+                when 'remote_open'
+                  if event.location.length
+                    app.workspace.open(formatFilePath(event.location) + app.sep + event.file)
+                  else
+                    app.workspace.open(event.file)
+
+          catch err
+            app.registeredFsConnections[0].send 'fs-error', err.message
+            app.registeredFsConnections[0].send 'fs-error', err.fileName
+            app.registeredFsConnections[0].send 'fs-error', err.lineNumber
+
+          remoteLog('SyncedFS debug: ' + e)
+      else
+        app.registeredFsConnections.push event.sender
+
+    ipc.on 'fs-local-save', (event, payload) ->
+      app.fsWebSocket.send payload
+
+    ipc.on 'fs-local-delete', (event, payload) ->
+      app.fsWebSocket.send payload
 
     ipc.on 'register-new-terminal', (event, url) ->
       if app.registeredTerminals.length == 0
@@ -61,7 +158,6 @@ start = ->
             catch
               console.log 'Error sending closed message to term: ' + term
 
-
       else
         app.registeredTerminals.push event.sender
 
@@ -74,13 +170,58 @@ start = ->
     ipc.on 'terminal-data', (event, data) ->
       app.terminalWebSocket.send data
 
-    ipc.on 'deactivate-terminal', (event) ->
+    ipc.on 'deactivate-listener', (event) ->
       app.registeredTerminals = app.registeredTerminals.filter((el) -> el != event.sender)
+      app.registeredFsConnections = app.registeredFsConnections.filter((el) -> el != event.sender)
 
     AtomApplication = require path.join(args.resourcePath, 'src', 'browser', 'atom-application')
     AtomApplication.open(args)
 
     console.log("App load time: #{Date.now() - global.shellStartTime}ms") unless args.test
+
+remoteLog = (message) ->
+  for conn in app.registeredFsConnections
+    conn.send 'remote-log', message
+
+remoteErr = (err, message) ->
+  for conn in app.registeredFsConnections
+    if message
+      remoteLog(message + ' ' + err.message)
+    else
+      remoteLog(err.message)
+
+    remoteLog('Error in: ' + err.fileName + ':' + err.lineNumber)
+
+formatFilePath = (path) ->
+  if path.match(/:\\/)
+    return path.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+  else
+    return path
+
+deleteDirectoryRecursive = (path) ->
+  console.log("PATH: " + path)
+  self = this
+  files = []
+
+  if fs.existsSync(path)
+    files = fs.readdirSync(path)
+
+    files.forEach (file, index) ->
+      curPath = path + app.sep + file
+
+      if app.isWindows
+        isdir = crossSpawn.sync('dir', [curPath]).stdout.toString().match(/<DIR>/)
+      else
+        isdir = fs.lstatSync(curPath).isDirectory()
+
+      if isdir
+        self.deleteDirectoryRecursive(curPath)
+      else
+        console.log('DELETING FILE: ' + curPath)
+
+        fs.unlinkSync(curPath)
+
+    fs.rmdirSync(path)
 
 normalizeDriveLetterName = (filePath) ->
   if process.platform is 'win32'

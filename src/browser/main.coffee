@@ -54,11 +54,32 @@ start = ->
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
 
+    ipc.on 'fs-connection-state-request', (event) =>
+      event.sender.send 'fs-connection-state', app.fsWebSocketStatus
+
     ipc.on 'register-new-fs-connection', (event, url) =>
       if app.registeredFsConnections.length == 0
         app.registeredFsConnections.push event.sender
 
         app.fsWebSocket = new WebSocket(url)
+
+        app.fsWebSocket.onopen = (e) =>
+          app.fsWebSocketStatus = 'open'
+
+          for registeredConn in app.registeredFsConnections
+            try
+              registeredConn.send 'fs-connection-state', app.fsWebSocketStatus
+            catch
+              console.log 'Error sending fs-connection-state to conn: ' + registeredConn
+
+        app.fsWebSocket.onclose = (e) =>
+          app.fsWebSocketStatus = 'closed'
+
+          for registeredConn in app.registeredFsConnections
+            try
+              registeredConn.send 'fs-connection-state', app.fsWebSocketStatus
+            catch
+              console.log 'Error sending fs-connection-state to conn: ' + registeredConn
 
         app.fsWebSocket.onmessage = (e) =>
           try
@@ -119,15 +140,17 @@ start = ->
                       file: event.file
                     })
                 when 'remote_open'
-                  if event.location.length
-                    app.workspace.open(formatFilePath(event.location) + app.sep + event.file)
-                  else
-                    app.workspace.open(event.file)
+                  for conn in app.registeredFsConnections
+                    try
+                      if event.location.length
+                        conn.send 'remote-open-event', formatFilePath(event.location) + app.sep + event.file
+                      else
+                        conn.send 'remote-open-event', event.file
+                    catch
+                      console.log 'Error sending remote open message to conn: ' + conn
 
           catch err
-            app.registeredFsConnections[0].send 'fs-error', err.message
-            app.registeredFsConnections[0].send 'fs-error', err.fileName
-            app.registeredFsConnections[0].send 'fs-error', err.lineNumber
+            remoteErr(err)
 
           remoteLog('SyncedFS debug: ' + e)
       else
@@ -181,7 +204,10 @@ start = ->
 
 remoteLog = (message) ->
   for conn in app.registeredFsConnections
-    conn.send 'remote-log', message
+    try
+      conn.send 'remote-log', message
+    catch
+      console.log 'Error sending remote logging to conn: ' + conn
 
 remoteErr = (err, message) ->
   for conn in app.registeredFsConnections

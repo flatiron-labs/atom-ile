@@ -228,7 +228,13 @@ resetFsWebSocketConnection = ->
               })
           when 'content_response'
             content = new Buffer(event.content, 'base64').toString()
-            fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, utf8.decode(content)
+
+            try
+              writableContent = utf8.decode(content)
+            catch
+              writableContent = content
+
+            fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, writableContent
           when 'remote_delete'
             if event.directory
               if app.isWindows

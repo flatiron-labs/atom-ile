@@ -50,111 +50,37 @@ start = ->
     app.registeredFsConnections = []
     app.sep = if /^win/.test(process.platform) then '\\' else '/'
     app.isWindows = if app.sep == '\\' then true else false
+    app.fsConnectionStatus   = 0
+    app.termConnectionStatus = 0
 
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
 
-    ipc.on 'fs-connection-state-request', (event) =>
-      event.sender.send 'fs-connection-state', app.fsWebSocketStatus
+    ipc.on 'connection-state-request', (event) =>
+      event.sender.send 'connection-state', connectedStatus()
+
+      for term in app.registeredTerminals
+        term.send 'connection-state', connectedStatus()
+
+      for conn in app.registeredFsConnections
+        conn.send 'connection-state', connectedStatus()
+
+    ipc.on 'reset-connection', (event) =>
+      reconnectWebSocketConnections()
 
     ipc.on 'register-new-fs-connection', (event, url) =>
       if app.registeredFsConnections.length == 0
+        app.fsSocketUrl = url
         app.registeredFsConnections.push event.sender
-
-        app.fsWebSocket = new WebSocket(url)
-
-        app.fsWebSocket.onopen = (e) =>
-          app.fsWebSocketStatus = 'open'
-
-          for registeredConn in app.registeredFsConnections
-            try
-              registeredConn.send 'fs-connection-state', app.fsWebSocketStatus
-            catch
-              console.log 'Error sending fs-connection-state to conn: ' + registeredConn
-
-        app.fsWebSocket.onclose = (e) =>
-          app.fsWebSocketStatus = 'closed'
-
-          for registeredConn in app.registeredFsConnections
-            try
-              registeredConn.send 'fs-connection-state', app.fsWebSocketStatus
-            catch
-              console.log 'Error sending fs-connection-state to conn: ' + registeredConn
-
-        app.fsWebSocket.onmessage = (e) =>
-          try
-            event = JSON.parse(e.data)
-
-            if !(event.location.match(/node_modules/) || event.file.match(/node_modules/))
-              switch event.event
-                when 'remote_create'
-                  if event.directory
-                    if app.isWindows
-                      execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
-                    else
-                      fs.makeTreeSync(app.workingDirPath + app.sep + event.location + app.sep + event.file)
-                  else
-                    fs.makeTreeSync(app.workingDirPath + app.sep + event.location)
-
-                    fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
-
-                    app.fsWebSocket.send JSON.stringify({
-                      action: 'request_content',
-                      location: event.location,
-                      file: event.file
-                    })
-                when 'content_response'
-                  content = new Buffer(event.content, 'base64').toString()
-                  fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, utf8.decode(content)
-                when 'remote_delete'
-                  if event.directory
-                    if app.isWindows
-                      rmdir app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, (error) ->
-                        remoteErr(error, 'RMDIR ERROR:')
-                    else
-                      if event.location.length
-                        deleteDirectoryRecursive app.workingDirPath + app.sep + event.location + app.sep + event.file
-                      else
-                        deleteDirectoryRecursive app.workingDirPath + app.sep + event.file
-                  else
-                    delPath = app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file
-
-                    if fs.existsSync(delPath)
-                      fs.unlinkSync(delPath)
-                when 'remote_move_from'
-                  remoteLog('move_from')
-                when 'remote_move_to'
-                  remoteLog('move_to')
-                when 'remote_modify'
-                  if !event.directory
-                    if app.isWindows
-                      execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location))
-                    else
-                      mkdirp.sync(app.workingDirPath + app.sep + event.location)
-
-                    fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
-
-                    app.fsWebSocket.send JSON.stringify({
-                      action: 'request_content',
-                      location: event.location,
-                      file: event.file
-                    })
-                when 'remote_open'
-                  for conn in app.registeredFsConnections
-                    try
-                      if event.location.length
-                        conn.send 'remote-open-event', formatFilePath(event.location) + app.sep + event.file
-                      else
-                        conn.send 'remote-open-event', event.file
-                    catch
-                      console.log 'Error sending remote open message to conn: ' + conn
-
-          catch err
-            remoteErr(err)
-
-          remoteLog('SyncedFS debug: ' + e)
+        resetFsWebSocketConnection()
       else
         app.registeredFsConnections.push event.sender
+
+      for term in app.registeredTerminals
+        term.send 'connection-state', connectedStatus()
+
+      for conn in app.registeredFsConnections
+        conn.send 'connection-state', connectedStatus()
 
     ipc.on 'fs-local-save', (event, payload) ->
       app.fsWebSocket.send payload
@@ -164,28 +90,20 @@ start = ->
 
     ipc.on 'register-new-terminal', (event, url) ->
       if app.registeredTerminals.length == 0
+        app.termSocketUrl = url
         app.registeredTerminals.push event.sender
-
-        app.terminalWebSocket = new WebSocket(url)
-        app.terminalWebSocket.onmessage = (e) =>
-          for term in app.registeredTerminals
-            try
-              term.send 'terminal-message', e.data
-            catch
-              console.log 'Error sending data to term: ' + term
-
-        app.terminalWebSocket.onclose = =>
-          for term in app.registeredTerminals
-            try
-              term.send 'terminal-session-closed'
-            catch
-              console.log 'Error sending closed message to term: ' + term
-
+        resetTermWebSocketConnection()
       else
         app.registeredTerminals.push event.sender
 
         app.registeredTerminals[0].send 'request-terminal-view',
           index: app.registeredTerminals.length - 1
+
+      for term in app.registeredTerminals
+        term.send 'connection-state', connectedStatus()
+
+      for conn in app.registeredFsConnections
+        conn.send 'connection-state', connectedStatus()
 
     ipc.on 'terminal-view-response', (event, response) ->
       app.registeredTerminals[response.index].send 'update-terminal-view', response.html
@@ -201,6 +119,169 @@ start = ->
     AtomApplication.open(args)
 
     console.log("App load time: #{Date.now() - global.shellStartTime}ms") unless args.test
+
+reconnectWebSocketConnections = ->
+  app.termConnectionStatus = 0
+  app.fsConnectionStatus   = 0
+
+  resetWebSocketCloseHandlers()
+
+  if app.terminalWebSocket.readyState == 1
+    app.terminalWebSocket.close()
+  else
+    resetTermWebSocketConnection()
+
+  if app.fsWebSocket.readyState == 1
+    app.fsWebSocket.close()
+  else
+    resetFsWebSocketConnection()
+
+resetWebSocketCloseHandlers = ->
+  app.terminalWebSocket.onclose = (e) =>
+    resetTermWebSocketConnection()
+
+  app.fsWebSocket.onclose = (e) =>
+    resetFsWebSocketConnection()
+
+resetWebSocketConnections = ->
+  resetTermWebSocketConnection()
+  resetFsWebSocketConnection()
+
+  for term in app.registeredTerminals
+    term.send 'connection-state', connectedStatus()
+
+  for conn in app.registeredFsConnections
+    conn.send 'connection-state', connectedStatus()
+
+resetTermWebSocketConnection = ->
+  app.termConnectionStatus = 0
+  app.terminalWebSocket = new WebSocket(app.termSocketUrl)
+
+  app.terminalWebSocket.onmessage = (e) =>
+    for term in app.registeredTerminals
+      try
+        term.send 'terminal-message', e.data
+      catch
+        console.log 'Error sending data to term: ' + term
+
+  app.terminalWebSocket.onopen = (e) =>
+    app.termConnectionStatus = 1
+
+    for term in app.registeredTerminals
+      try
+        term.send 'connection-state', connectedStatus()
+      catch
+        console.log 'Error sending connection-state to term: ' + term
+
+  app.terminalWebSocket.onclose = =>
+    app.termConnectionStatus = 0
+
+    for term in app.registeredTerminals
+      try
+        term.send 'connection-state', connectedStatus()
+      catch
+        console.log 'Error sending connection-state to term: ' + term
+
+resetFsWebSocketConnection = ->
+  app.fsConnectionStatus = 0
+  app.fsWebSocket = new WebSocket(app.fsSocketUrl)
+
+  app.fsWebSocket.onopen = (e) =>
+    app.fsConnectionStatus = 1
+
+    for registeredConn in app.registeredFsConnections
+      try
+        registeredConn.send 'connection-state', connectedStatus()
+      catch
+        console.log 'Error sending connection-state to conn: ' + registeredConn
+
+  app.fsWebSocket.onclose = (e) =>
+    app.fsConnectionStatus = 0
+
+    for registeredConn in app.registeredFsConnections
+      try
+        registeredConn.send 'connection-state', connectedStatus()
+      catch
+        console.log 'Error sending connection-state to conn: ' + registeredConn
+
+  app.fsWebSocket.onmessage = (e) =>
+    try
+      event = JSON.parse(e.data)
+
+      if !(event.location.match(/node_modules/) || event.file.match(/node_modules/))
+        switch event.event
+          when 'remote_create'
+            if event.directory
+              if app.isWindows
+                execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+              else
+                fs.makeTreeSync(app.workingDirPath + app.sep + event.location + app.sep + event.file)
+            else
+              fs.makeTreeSync(app.workingDirPath + app.sep + event.location)
+
+              fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
+
+              app.fsWebSocket.send JSON.stringify({
+                action: 'request_content',
+                location: event.location,
+                file: event.file
+              })
+          when 'content_response'
+            content = new Buffer(event.content, 'base64').toString()
+            fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, utf8.decode(content)
+          when 'remote_delete'
+            if event.directory
+              if app.isWindows
+                rmdir app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, (error) ->
+                  remoteErr(error, 'RMDIR ERROR:')
+              else
+                if event.location.length
+                  deleteDirectoryRecursive app.workingDirPath + app.sep + event.location + app.sep + event.file
+                else
+                  deleteDirectoryRecursive app.workingDirPath + app.sep + event.file
+            else
+              delPath = app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file
+
+              if fs.existsSync(delPath)
+                fs.unlinkSync(delPath)
+          when 'remote_move_from'
+            remoteLog('move_from')
+          when 'remote_move_to'
+            remoteLog('move_to')
+          when 'remote_modify'
+            if !event.directory
+              if app.isWindows
+                execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location))
+              else
+                mkdirp.sync(app.workingDirPath + app.sep + event.location)
+
+              fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
+
+              app.fsWebSocket.send JSON.stringify({
+                action: 'request_content',
+                location: event.location,
+                file: event.file
+              })
+          when 'remote_open'
+            for conn in app.registeredFsConnections
+              try
+                if event.location.length
+                  conn.send 'remote-open-event', formatFilePath(event.location) + app.sep + event.file
+                else
+                  conn.send 'remote-open-event', event.file
+              catch
+                console.log 'Error sending remote open message to conn: ' + conn
+
+    catch err
+      remoteErr(err)
+
+    remoteLog('SyncedFS debug: ' + e)
+
+connected = ->
+  return app.fsConnectionStatus + app.termConnectionStatus == 2
+
+connectedStatus = ->
+  return if connected() then 'open' else 'closed'
 
 remoteLog = (message) ->
   for conn in app.registeredFsConnections

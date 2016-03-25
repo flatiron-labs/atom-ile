@@ -250,9 +250,12 @@ resetFsWebSocketConnection = ->
 
               if fs.existsSync(delPath)
                 fs.unlinkSync(delPath)
-          when 'remote_move_from'
+          when 'remote_moved_from'
+            # TODO: app.moveQueue.push(event)
             remoteLog('move_from')
-          when 'remote_move_to'
+          when 'remote_moved_to'
+            # TODO: app.moveQueue.shift
+            #       delete shifted one, do content request for moved_to (same as remote_create?)
             remoteLog('move_to')
           when 'remote_modify'
             if !event.directory

@@ -18,6 +18,7 @@ spawn      = require('child_process').spawnSync
 crossSpawn = require('cross-spawn').spawn
 rmdir      = require 'rimraf'
 utf8       = require 'utf8'
+shell      = require 'shell'
 
 start = ->
   args = parseCommandLine()
@@ -237,41 +238,14 @@ resetFsWebSocketConnection = ->
 
             fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, writableContent
           when 'remote_delete'
-            if event.directory
-              if app.isWindows
-                rmdir app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, (error) ->
-                  remoteErr(error, 'RMDIR ERROR:')
-              else
-                if event.location.length
-                  deleteDirectoryRecursive app.workingDirPath + app.sep + event.location + app.sep + event.file
-                else
-                  deleteDirectoryRecursive app.workingDirPath + app.sep + event.file
-            else
-              delPath = app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file
-
-              if fs.existsSync(delPath)
-                fs.unlinkSync(delPath)
+            shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
           when 'remote_moved_from'
             app.moveQueue.push(event)
           when 'remote_moved_to'
             # TODO: Dry this the heck up
             movedFrom = app.moveQueue.shift()
             movedTo   = event
-
-            if movedFrom.directory
-              if app.isWindows
-                rmdir app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file, (error) ->
-                  remoteErr(error, 'RMDIR ERROR:')
-              else
-                if movedFrom.location.length
-                  deleteDirectoryRecursive app.workingDirPath + app.sep + movedFrom.location + app.sep + movedFrom.file
-                else
-                  deleteDirectoryRecursive app.workingDirPath + app.sep + movedFrom.file
-            else
-              delPath = app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file
-
-              if fs.existsSync(delPath)
-                fs.unlinkSync(delPath)
+            shell.moveItemToTrash(app.workingDirPath + app.sep + movedFrom.location + app.sep + movedFrom.file)
 
             if movedTo.directory
               if app.isWindows
@@ -344,31 +318,6 @@ formatFilePath = (path) ->
     return path.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
   else
     return path
-
-deleteDirectoryRecursive = (path) ->
-  console.log("PATH: " + path)
-  self = this
-  files = []
-
-  if fs.existsSync(path)
-    files = fs.readdirSync(path)
-
-    files.forEach (file, index) ->
-      curPath = path + app.sep + file
-
-      if app.isWindows
-        isdir = crossSpawn.sync('dir', [curPath]).stdout.toString().match(/<DIR>/)
-      else
-        isdir = fs.lstatSync(curPath).isDirectory()
-
-      if isdir
-        self.deleteDirectoryRecursive(curPath)
-      else
-        console.log('DELETING FILE: ' + curPath)
-
-        fs.unlinkSync(curPath)
-
-    fs.rmdirSync(path)
 
 normalizeDriveLetterName = (filePath) ->
   if process.platform is 'win32'

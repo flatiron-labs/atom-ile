@@ -52,6 +52,7 @@ start = ->
     app.isWindows = if app.sep == '\\' then true else false
     app.fsConnectionStatus   = 0
     app.termConnectionStatus = 0
+    app.moveQueue = []
 
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
@@ -251,12 +252,42 @@ resetFsWebSocketConnection = ->
               if fs.existsSync(delPath)
                 fs.unlinkSync(delPath)
           when 'remote_moved_from'
-            # TODO: app.moveQueue.push(event)
-            remoteLog('move_from')
+            app.moveQueue.push(event)
           when 'remote_moved_to'
-            # TODO: app.moveQueue.shift
-            #       delete shifted one, do content request for moved_to (same as remote_create?)
-            remoteLog('move_to')
+            # TODO: Dry this the heck up
+            movedFrom = app.moveQueue.shift()
+            movedTo   = event
+
+            if movedFrom.directory
+              if app.isWindows
+                rmdir app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file, (error) ->
+                  remoteErr(error, 'RMDIR ERROR:')
+              else
+                if movedFrom.location.length
+                  deleteDirectoryRecursive app.workingDirPath + app.sep + movedFrom.location + app.sep + movedFrom.file
+                else
+                  deleteDirectoryRecursive app.workingDirPath + app.sep + movedFrom.file
+            else
+              delPath = app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file
+
+              if fs.existsSync(delPath)
+                fs.unlinkSync(delPath)
+
+            if movedTo.directory
+              if app.isWindows
+                execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
+              else
+                fs.makeTreeSync(app.workingDirPath + app.sep + movedTo.location + app.sep + movedTo.file)
+            else
+              fs.makeTreeSync(app.workingDirPath + app.sep + movedTo.location)
+
+              fs.openSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file, 'a')
+
+              app.fsWebSocket.send JSON.stringify({
+                action: 'request_content',
+                location: movedTo.location,
+                file: movedTo.file
+              })
           when 'remote_modify'
             if !event.directory
               if app.isWindows

@@ -236,6 +236,8 @@ class AtomApplication
     ipc.on 'open', (event, options) =>
       window = @windowForEvent(event)
       if options?
+        if options.learnOpen?
+          @emit('application:new-window')
         if typeof options.pathsToOpen is 'string'
           options.pathsToOpen = [options.pathsToOpen]
         if options.pathsToOpen?.length > 0
@@ -494,6 +496,10 @@ class AtomApplication
         packagePath = @packages.resolvePackagePath(packageName)
         windowInitializationScript = path.resolve(packagePath, pack.urlMain)
         windowDimensions = @focusedWindow()?.getDimensions()
+        if packageName == 'integrated-learn-environment'
+          #openStateFile = process.env.ATOM_HOME + '/.learn-open-url'
+          #fs.writeFileSync(openStateFile, new Buffer(urlToOpen).toString())
+
         new AtomWindow({windowInitializationScript, @resourcePath, devMode, safeMode, urlToOpen, windowDimensions})
       else
         console.log "Package '#{pack.name}' does not have a url main: #{urlToOpen}"

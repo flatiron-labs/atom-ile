@@ -489,7 +489,6 @@ class AtomApplication
         resourcePath: @resourcePath
 
     packageName = url.parse(urlToOpen).host
-    
     pack = _.find @packages.getAvailablePackageMetadata(), ({name}) -> name is packageName
     if pack?
       if pack.urlMain

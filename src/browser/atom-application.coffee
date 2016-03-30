@@ -501,7 +501,8 @@ class AtomApplication
           blobStore = FileSystemBlobStore.load(
             path.join(process.env.ATOM_HOME, 'blob-store/')
           )
-          blobStore.set("learnOpenUrl", "learn-open-url-key", new Buffer(urlToOpen))
+          openPath = url.parse(urlToOpen).pathname.substring(1)
+          blobStore.set("learnOpenUrl", "learn-open-url-key", new Buffer(openPath))
           blobStore.save()
 
         new AtomWindow({windowInitializationScript, @resourcePath, devMode, safeMode, urlToOpen, windowDimensions})

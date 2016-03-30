@@ -497,6 +497,7 @@ class AtomApplication
         windowInitializationScript = path.resolve(packagePath, pack.urlMain)
         windowDimensions = @focusedWindow()?.getDimensions()
         if packageName == 'integrated-learn-environment'
+          true
           #openStateFile = process.env.ATOM_HOME + '/.learn-open-url'
           #fs.writeFileSync(openStateFile, new Buffer(urlToOpen).toString())
 

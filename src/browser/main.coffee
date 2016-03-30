@@ -95,8 +95,13 @@ start = ->
       else
         app.registeredTerminals.push event.sender
 
-        app.registeredTerminals[0].send 'request-terminal-view',
-          index: app.registeredTerminals.length - 1
+        # This happens when Atom had no windows open, but already had a socket
+        # connection when a new window was opened
+        if app.registeredTerminals.length == 1
+          app.terminalWebSocket.send('\u0003')
+        else
+          app.registeredTerminals[0].send 'request-terminal-view',
+            index: app.registeredTerminals.length - 1
 
       for term in app.registeredTerminals
         term.send 'connection-state', connectedStatus()

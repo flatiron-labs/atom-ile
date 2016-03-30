@@ -14,9 +14,6 @@ ipc = require 'ipc'
 WebSocket = require('websocket').w3cwebsocket
 mkdirp     = require 'mkdirp'
 execSync   = require('child_process').execSync
-spawn      = require('child_process').spawnSync
-crossSpawn = require('cross-spawn').spawn
-rmdir      = require 'rimraf'
 utf8       = require 'utf8'
 shell      = require 'shell'
 

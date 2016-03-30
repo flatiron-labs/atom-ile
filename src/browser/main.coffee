@@ -68,7 +68,7 @@ start = ->
       reconnectWebSocketConnections()
 
     ipc.on 'register-new-fs-connection', (event, url) =>
-      if app.registeredFsConnections.length == 0
+      if app.registeredFsConnections.length == 0 && (!app.fsWebSocket || app.fsWebSocket.readyState != app.fsWebSocket.OPEN)
         app.fsSocketUrl = url
         app.registeredFsConnections.push event.sender
         resetFsWebSocketConnection()
@@ -88,7 +88,7 @@ start = ->
       app.fsWebSocket.send payload
 
     ipc.on 'register-new-terminal', (event, url) ->
-      if app.registeredTerminals.length == 0
+      if app.registeredTerminals.length == 0 && (!app.terminalWebSocket || app.terminalWebSocket.readyState != app.terminalWebSocket.OPEN)
         app.termSocketUrl = url
         app.registeredTerminals.push event.sender
         resetTermWebSocketConnection()

@@ -291,7 +291,8 @@ resetFsWebSocketConnection = ->
     catch err
       remoteErr(err)
 
-    remoteLog('SyncedFS debug: ' + e)
+    #remoteLog('DATA: ' + e.data)
+    #remoteLog('SyncedFS debug: ' + e)
 
 connected = ->
   return app.fsConnectionStatus + app.termConnectionStatus == 2

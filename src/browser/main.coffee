@@ -217,7 +217,8 @@ resetFsWebSocketConnection = ->
           when 'remote_create'
             if event.directory
               if app.isWindows
-                execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+                #execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
               else
                 fs.makeTreeSync(app.workingDirPath + app.sep + event.location + app.sep + event.file)
             else
@@ -251,7 +252,8 @@ resetFsWebSocketConnection = ->
 
             if movedTo.directory
               if app.isWindows
-                execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
+                #execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
+                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
               else
                 fs.makeTreeSync(app.workingDirPath + app.sep + movedTo.location + app.sep + movedTo.file)
             else
@@ -267,9 +269,11 @@ resetFsWebSocketConnection = ->
           when 'remote_modify'
             if !event.directory
               if app.isWindows
-                execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location))
+                #execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location))
+                fs.makeTreeSync(app.workingDirPath + app.sepp + formatFilePath(event.location))
               else
-                mkdirp.sync(app.workingDirPath + app.sep + event.location)
+                fs.makeTreeSync(app.workingDirPath + app.sepp + event.location)
+                #mkdirp.sync(app.workingDirPath + app.sep + event.location)
 
               fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
 

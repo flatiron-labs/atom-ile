@@ -32,10 +32,7 @@ start = ->
 
   addUrlToOpen = (event, urlToOpen) ->
     event.preventDefault()
-    if (urlToOpen.match(/ile\-learn\-open/))
-      console.log(urlToOpen)
-    else
-      args.urlsToOpen.push(urlToOpen)
+    args.urlsToOpen.push(urlToOpen)
 
   app.on 'open-file', addPathToOpen
   app.on 'open-url', addUrlToOpen
@@ -394,6 +391,7 @@ parseCommandLine = ->
   options.alias('v', 'version').boolean('v').describe('v', 'Print the version.')
   options.alias('w', 'wait').boolean('w').describe('w', 'Wait for window to be closed before returning.')
   options.string('socket-path')
+  options.string('url-to-open')
 
   args = options.argv
 
@@ -423,6 +421,9 @@ parseCommandLine = ->
   if args['resource-path']
     devMode = true
     resourcePath = args['resource-path']
+
+  if args['url-to-open']
+    urlsToOpen.push(args['url-to-open'])
 
   devMode = true if test
   resourcePath ?= devResourcePath if devMode

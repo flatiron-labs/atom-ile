@@ -262,7 +262,7 @@ resetFsWebSocketConnection = ->
             if !event.directory
               fs.makeTreeSync(app.workingDirPath + app.sepp + formatFilePath(event.location))
 
-              fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
+              fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, '')
 
               app.fsWebSocket.send JSON.stringify({
                 action: 'request_content',

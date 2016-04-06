@@ -321,10 +321,11 @@ remoteErr = (err, message) ->
     remoteLog('Error in: ' + err.fileName + ':' + err.lineNumber)
 
 formatFilePath = (path) ->
-  if path.match(/:\\/)
-    return path.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-  else
-    return path
+  #if path.match(/:\\/)
+  return path.replace(/\//, '\\')
+    #return path.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+  #else
+    #return path
 
 normalizeDriveLetterName = (filePath) ->
   if process.platform is 'win32'

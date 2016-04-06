@@ -237,7 +237,10 @@ resetFsWebSocketConnection = ->
 
             fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, writableContent
           when 'remote_delete'
-            shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+            if event.directory
+              shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+            else
+              fs.removeSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
           when 'remote_moved_from'
             app.moveQueue.push(event)
           when 'remote_moved_to'

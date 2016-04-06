@@ -216,15 +216,11 @@ resetFsWebSocketConnection = ->
         switch event.event
           when 'remote_create'
             if event.directory
-              if app.isWindows
-                #execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
-                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
-              else
-                fs.makeTreeSync(app.workingDirPath + app.sep + event.location + app.sep + event.file)
+              fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
             else
-              fs.makeTreeSync(app.workingDirPath + app.sep + event.location)
+              fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location))
 
-              fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
+              fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, '')
 
               app.fsWebSocket.send JSON.stringify({
                 action: 'request_content',
@@ -248,18 +244,14 @@ resetFsWebSocketConnection = ->
             # TODO: Dry this the heck up
             movedFrom = app.moveQueue.shift()
             movedTo   = event
-            shell.moveItemToTrash(app.workingDirPath + app.sep + movedFrom.location + app.sep + movedFrom.file)
+            shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
 
             if movedTo.directory
-              if app.isWindows
-                #execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
-                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
-              else
-                fs.makeTreeSync(app.workingDirPath + app.sep + movedTo.location + app.sep + movedTo.file)
+              fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
             else
-              fs.makeTreeSync(app.workingDirPath + app.sep + movedTo.location)
+              fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location))
 
-              fs.openSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file, 'a')
+              fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file, '')
 
               app.fsWebSocket.send JSON.stringify({
                 action: 'request_content',
@@ -268,12 +260,7 @@ resetFsWebSocketConnection = ->
               })
           when 'remote_modify'
             if !event.directory
-              if app.isWindows
-                #execSync('mkdir ' + app.workingDirPath + app.sep + formatFilePath(event.location))
-                fs.makeTreeSync(app.workingDirPath + app.sepp + formatFilePath(event.location))
-              else
-                fs.makeTreeSync(app.workingDirPath + app.sepp + event.location)
-                #mkdirp.sync(app.workingDirPath + app.sep + event.location)
+              fs.makeTreeSync(app.workingDirPath + app.sepp + formatFilePath(event.location))
 
               fs.openSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, 'a')
 
@@ -321,11 +308,10 @@ remoteErr = (err, message) ->
     remoteLog('Error in: ' + err.fileName + ':' + err.lineNumber)
 
 formatFilePath = (path) ->
-  #if path.match(/:\\/)
-  return path.replace(/\//, '\\')
-    #return path.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-  #else
-    #return path
+  if app.isWindows
+    return path.replace(/\//g, '\\')
+  else
+    return path
 
 normalizeDriveLetterName = (filePath) ->
   if process.platform is 'win32'

@@ -52,6 +52,28 @@ start = ->
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
 
+    ipc.on 'file-moved', (event, moveData) ->
+      if moveData.from.match(/:\\/)
+        fromPath = moveData.from.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+        toPath = moveData.to.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+      else
+        fromPath = moveData.from
+        toPath = moveData.to
+
+      if fromPath.match(/\.atom\/code/)
+        payload = JSON.stringify({
+          action: 'local_move',
+          project: {
+            path: app.workingDirPath
+          },
+          file: {
+            path: toPath
+          },
+          from: fromPath
+        })
+
+        app.fsWebSocket.send payload
+
     ipc.on 'connection-state-request', (event) =>
       event.sender.send 'connection-state', connectedStatus()
 

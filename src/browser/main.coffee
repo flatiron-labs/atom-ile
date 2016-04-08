@@ -56,15 +56,17 @@ start = ->
       if moveData.from.match(/:\\/)
         fromPath = moveData.from.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
         toPath = moveData.to.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+        projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
       else
         fromPath = moveData.from
         toPath = moveData.to
+        projectPath = app.workingDirPath
 
       if fromPath.match(/\.atom\/code/)
         payload = JSON.stringify({
           action: 'local_move',
           project: {
-            path: app.workingDirPath
+            path: projectPath
           },
           file: {
             path: toPath
@@ -266,8 +268,12 @@ resetFsWebSocketConnection = ->
             # TODO: Dry this the heck up
             movedFrom = app.moveQueue.shift()
             movedTo   = event
-            shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
-
+            if movedFrom.length
+              remoteLog(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
+              shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
+            else
+              remoteLog(app.workingDirPath + app.sep + movedFrom.file)
+              shell.moveItemToTrash(app.workingDirPath + app.sep + movedFrom.file)
             if movedTo.directory
               fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
             else

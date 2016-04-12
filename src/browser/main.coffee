@@ -62,6 +62,10 @@ start = ->
         toPath = moveData.to
         projectPath = app.workingDirPath
 
+      remoteLog('FROM PATH: ' + fromPath)
+      remoteLog('TO PATH: ' + toPath)
+      remoteLog('PROJECT PATH: ' + projectPath)
+
       if fromPath.match(/\.atom\/code/)
         payload = JSON.stringify({
           action: 'local_move',
@@ -268,24 +272,27 @@ resetFsWebSocketConnection = ->
             # TODO: Dry this the heck up
             movedFrom = app.moveQueue.shift()
             movedTo   = event
-            if movedFrom.length
-              remoteLog(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
-              shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
-            else
-              remoteLog(app.workingDirPath + app.sep + movedFrom.file)
-              shell.moveItemToTrash(app.workingDirPath + app.sep + movedFrom.file)
-            if movedTo.directory
-              fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
-            else
-              fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location))
 
-              fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file, '')
+            if movedFrom
+              if movedFrom.location.length
+                remoteLog(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
+                shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
+              else
+                remoteLog(app.workingDirPath + app.sep + movedFrom.file)
+                shell.moveItemToTrash(app.workingDirPath + app.sep + movedFrom.file)
 
-              app.fsWebSocket.send JSON.stringify({
-                action: 'request_content',
-                location: movedTo.location,
-                file: movedTo.file
-              })
+              if movedTo.directory
+                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
+              else
+                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location))
+
+                fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file, '')
+
+                app.fsWebSocket.send JSON.stringify({
+                  action: 'request_content',
+                  location: movedTo.location,
+                  file: movedTo.file
+                })
           when 'remote_modify'
             if !event.directory
               fs.makeTreeSync(app.workingDirPath + app.sepp + formatFilePath(event.location))

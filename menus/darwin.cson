@@ -1,8 +1,8 @@
 'menu': [
   {
-    label: 'Atom'
+    label: 'Learn ILE'
     submenu: [
-      { label: 'About Atom', command: 'application:about' }
+      { label: 'About Learn ILE', command: 'application:about' }
       { label: 'View License', command: 'application:open-license' }
       { label: 'VERSION', enabled: false }
       { label: 'Restart and Install Update', command: 'application:install-update', visible: false}

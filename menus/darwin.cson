@@ -21,7 +21,7 @@
       { type: 'separator' }
       { label: 'Services', role: 'services', submenu: [] }
       { type: 'separator' }
-      { label: 'Hide Atom', command: 'application:hide' }
+      { label: 'Hide Learn ILE', command: 'application:hide' }
       { label: 'Hide Others', command: 'application:hide-other-applications' }
       { label: 'Show All', command: 'application:unhide-all-applications' }
       { type: 'separator' }

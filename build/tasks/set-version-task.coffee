@@ -47,10 +47,10 @@ module.exports = (grunt) ->
         shellExePath = path.join(shellAppDir, 'atom.exe')
 
         strings =
-          CompanyName: 'GitHub, Inc.'
-          FileDescription: 'Atom'
+          CompanyName: 'GitHub, Inc. / Flatiron School'
+          FileDescription: 'Learn ILE'
           LegalCopyright: 'Copyright (C) 2015 GitHub, Inc. All rights reserved'
-          ProductName: 'Atom'
+          ProductName: 'Learn ILE'
           ProductVersion: version
 
         rcedit = require('rcedit')

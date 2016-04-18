@@ -16,6 +16,7 @@ mkdirp     = require 'mkdirp'
 execSync   = require('child_process').execSync
 utf8       = require 'utf8'
 shell      = require 'shell'
+BrowserWindow = require 'browser-window'
 
 start = ->
   args = parseCommandLine()
@@ -51,6 +52,12 @@ start = ->
 
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
+
+    ipc.on 'new-update-window', (event, args) ->
+      win = new BrowserWindow(args)
+      win.on 'closed', ->
+        win = null
+      win.show()
 
     ipc.on 'file-moved', (event, moveData) ->
       if moveData.from.match(/:\\/)

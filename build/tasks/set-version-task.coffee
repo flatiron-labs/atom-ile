@@ -48,9 +48,9 @@ module.exports = (grunt) ->
 
         strings =
           CompanyName: 'GitHub, Inc. / Flatiron School'
-          FileDescription: 'Learn ILE'
+          FileDescription: 'Learn IDE'
           LegalCopyright: 'Copyright (C) 2015 GitHub, Inc. All rights reserved'
-          ProductName: 'Learn ILE'
+          ProductName: 'Learn IDE'
           ProductVersion: version
 
         rcedit = require('rcedit')

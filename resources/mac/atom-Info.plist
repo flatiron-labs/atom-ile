@@ -13,7 +13,7 @@
 	<key>CFBundleName</key>
 	<string>Atom</string>
   <key>CFBundleDisplayName</key>
-  <string>Learn ILE</string>
+  <string>Learn IDE</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleDevelopmentRegion</key>

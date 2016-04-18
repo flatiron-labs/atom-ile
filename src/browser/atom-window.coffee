@@ -25,7 +25,7 @@ class AtomWindow
 
     options =
       show: false
-      title: 'Learn ILE'
+      title: 'Learn IDE'
       'web-preferences':
         'direct-write': true
 

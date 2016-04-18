@@ -120,7 +120,7 @@ class ApplicationMenu
   # Returns an Array of menu item Objects.
   getDefaultTemplate: ->
     template = [
-      label: "Learn ILE"
+      label: "Learn IDE"
       submenu: [
           {label: 'Reload', accelerator: 'Command+R', click: => @focusedWindow()?.reload()}
           {label: 'Close Window', accelerator: 'Command+Shift+W', click: => @focusedWindow()?.close()}

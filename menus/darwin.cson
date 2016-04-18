@@ -1,8 +1,8 @@
 'menu': [
   {
-    label: 'Learn ILE'
+    label: 'Learn IDE'
     submenu: [
-      { label: 'About Learn ILE', command: 'application:about' }
+      { label: 'About Learn IDE', command: 'application:about' }
       { label: 'View License', command: 'application:open-license' }
       { label: 'VERSION', enabled: false }
       { label: 'Restart and Install Update', command: 'application:install-update', visible: false}
@@ -21,7 +21,7 @@
       { type: 'separator' }
       { label: 'Services', role: 'services', submenu: [] }
       { type: 'separator' }
-      { label: 'Hide Learn ILE', command: 'application:hide' }
+      { label: 'Hide Learn IDE', command: 'application:hide' }
       { label: 'Hide Others', command: 'application:hide-other-applications' }
       { label: 'Show All', command: 'application:unhide-all-applications' }
       { type: 'separator' }

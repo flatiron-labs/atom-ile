@@ -58,7 +58,7 @@ if [ $OS == 'Mac' ]; then
   if [ -n "$BETA_VERSION" ]; then
     ATOM_APP_NAME="Atom Beta.app"
   else
-    ATOM_APP_NAME="Atom.app"
+    ATOM_APP_NAME="Learn IDE.app"
   fi
 
   if [ -z "${ATOM_PATH}" ]; then
@@ -73,7 +73,7 @@ if [ $OS == 'Mac' ]; then
 
       # Exit if Atom can't be found
       if [ ! -x "$ATOM_PATH/$ATOM_APP_NAME" ]; then
-        echo "Cannot locate Atom.app, it is usually located in /Applications. Set the ATOM_PATH environment variable to the directory containing Atom.app."
+        echo "Cannot locate Learn IDE.app, it is usually located in /Applications. Set the ATOM_PATH environment variable to the directory containing Learn IDE.app."
         exit 1
       fi
     fi

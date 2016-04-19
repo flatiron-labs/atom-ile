@@ -55,9 +55,20 @@ start = ->
 
     ipc.on 'new-update-window', (event, args) ->
       win = new BrowserWindow(args)
+
       win.on 'closed', ->
         win = null
-      win.show()
+
+      updatePlatform = if app.isWindows then 'win' else 'mac'
+
+      win.loadUrl('https://learn.co/learn_ide/update_check?out_of_date=' + args.outOfDate + '&platform=' + updatePlatform)
+
+      win.webContents.on 'new-window', (e, url) ->
+        e.preventDefault()
+        shell.openExternal(url)
+
+      win.webContents.on 'did-finish-load', ->
+        win.show()
 
     ipc.on 'file-moved', (event, moveData) ->
       if moveData.from.match(/:\\/)

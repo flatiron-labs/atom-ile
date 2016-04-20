@@ -10,6 +10,7 @@
       { label: 'Reopen Last &Item', command: 'pane:reopen-closed-item' }
       { type: 'separator' }
       { label: 'Se&ttings', command: 'application:show-settings' }
+      { label: 'Check for Update', command: 'application:update-ile' }
       { label: 'Open Your Config', command: 'application:open-your-config' }
       { label: 'Open Your Init Script', command: 'application:open-your-init-script' }
       { label: 'Open Your Keymap', command: 'application:open-your-keymap' }

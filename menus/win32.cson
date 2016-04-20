@@ -170,8 +170,8 @@
       { label: 'View &Terms of Use', command: 'application:open-terms-of-use' }
       { label: 'View &License', command: 'application:open-license' }
       { label: 'VERSION', enabled: false }
-      { label: 'Restart and Install Update', command: 'application:install-update', visible: false}
-      { label: 'Check for Update', command: 'application:check-for-update', visible: false}
+      { label: 'Restart and Install Update', command: 'application:install-update', visible: false, enabled: false }
+      { label: 'Check for Update', command: 'application:update-ile', visible: false}
       { label: 'Checking for Update', enabled: false, visible: false}
       { label: 'Downloading Update', enabled: false, visible: false}
       { type: 'separator' }
@@ -183,7 +183,7 @@
       { label: 'Report Issue', command: 'application:report-issue' }
       { label: 'Search Issues', command: 'application:search-issues' }
       { type: 'separator' }
-      { label: 'About Learn IDE', command: 'application:about' }
+      { label: 'About Learn IDE', command: 'application:about', enabled: false, visible: false }
       { type: 'separator' }
     ]
   }

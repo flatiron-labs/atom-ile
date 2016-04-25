@@ -18,6 +18,7 @@ utf8       = require 'utf8'
 shell      = require 'shell'
 BrowserWindow = require 'browser-window'
 querystring = require 'querystring'
+LearnNotificationManager = require './learn-notification-manager'
 
 start = ->
   args = parseCommandLine()
@@ -58,25 +59,40 @@ start = ->
     ##################   NOTIFICATION CODE TO REFACTOR LATER ###################
     ############################################################################
 
-    app.notifSubscription = new WebSocket('wss://push.flatironschool.com:9443/ws/fis-user-59')
+    ipc.on 'register-for-notifications', (event, oauthToken) =>
+      if !app.learnNotifManager
+        app.learnNotifManager = new LearnNotificationManager(oauthToken)
 
-    app.notifSubscription.onopen = (e) =>
-      remoteLog 'Notif ws open'
+        app.learnNotifManager.authenticate().then (manager) =>
+          manager.subscribe()
+          remoteLog 'after auth'
+        , (err) =>
+          remoteLog err.message
 
-    app.notifSubscription.onmessage = (e) =>
-      try
-        rawData = JSON.parse(e.data)
-        eventData = querystring.parse rawData.text
+        app.learnNotifManager.on 'notification-debug', (data) =>
+          remoteLog data
 
-        remoteLog eventData
+    #app.notifSubscription = new WebSocket('wss://push.flatironschool.com:9443/ws/fis-user-59')
 
-        notif = new Notification 'Hello!',
-          body: e
+    #app.notifSubscription.onopen = (e) =>
+      #remoteLog 'Notif ws open'
 
-        notif.onclick = ->
-          nofif.close()
-      catch
-        remoteLog 'Error creating notification'
+    #app.notifSubscription.onmessage = (e) =>
+      #try
+        #rawData = JSON.parse(e.data)
+        #eventData = querystring.parse rawData.text
+        #testToken = atom.config.get('integrated-learn-environment.oauthToken')
+        #remoteLog testToken
+
+        #remoteLog eventData
+
+        #notif = new Notification 'Hello!',
+          #body: e
+
+        #notif.onclick = ->
+          #nofif.close()
+      #catch
+        #remoteLog 'Error creating notification'
 
     ############################################################################
     ########################## END NOTIFICATION CODE ###########################

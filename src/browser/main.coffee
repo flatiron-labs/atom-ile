@@ -65,7 +65,6 @@ start = ->
 
         app.learnNotifManager.authenticate().then (manager) =>
           manager.subscribe()
-          remoteLog 'after auth'
         , (err) =>
           remoteLog err.message
 

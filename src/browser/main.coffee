@@ -72,27 +72,13 @@ start = ->
         app.learnNotifManager.on 'notification-debug', (data) =>
           remoteLog data
 
-    #app.notifSubscription = new WebSocket('wss://push.flatironschool.com:9443/ws/fis-user-59')
-
-    #app.notifSubscription.onopen = (e) =>
-      #remoteLog 'Notif ws open'
-
-    #app.notifSubscription.onmessage = (e) =>
-      #try
-        #rawData = JSON.parse(e.data)
-        #eventData = querystring.parse rawData.text
-        #testToken = atom.config.get('integrated-learn-environment.oauthToken')
-        #remoteLog testToken
-
-        #remoteLog eventData
-
-        #notif = new Notification 'Hello!',
-          #body: e
-
-        #notif.onclick = ->
-          #nofif.close()
-      #catch
-        #remoteLog 'Error creating notification'
+        app.learnNotifManager.on 'new-notification', (data) =>
+          if app.registeredTerminals.length
+            app.registeredTerminals[0].send 'new-notification', data
+          else if app.registeredFsConnections.length
+            app.registeredFsConnections[0].send 'new-notification', data
+          else
+            console.log 'No available render processes to receive notification.'
 
     ############################################################################
     ########################## END NOTIFICATION CODE ###########################

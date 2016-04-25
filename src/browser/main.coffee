@@ -17,6 +17,7 @@ execSync   = require('child_process').execSync
 utf8       = require 'utf8'
 shell      = require 'shell'
 BrowserWindow = require 'browser-window'
+querystring = require 'querystring'
 
 start = ->
   args = parseCommandLine()
@@ -52,6 +53,34 @@ start = ->
 
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
+
+    ############################################################################
+    ##################   NOTIFICATION CODE TO REFACTOR LATER ###################
+    ############################################################################
+
+    app.notifSubscription = new WebSocket('wss://push.flatironschool.com:9443/ws/fis-user-59')
+
+    app.notifSubscription.onopen = (e) =>
+      remoteLog 'Notif ws open'
+
+    app.notifSubscription.onmessage = (e) =>
+      try
+        rawData = JSON.parse(e.data)
+        eventData = querystring.parse rawData.text
+
+        remoteLog eventData
+
+        notif = new Notification 'Hello!',
+          body: e
+
+        notif.onclick = ->
+          nofif.close()
+      catch
+        remoteLog 'Error creating notification'
+
+    ############################################################################
+    ########################## END NOTIFICATION CODE ###########################
+    ############################################################################
 
     ipc.on 'new-update-window', (event, args) ->
       win = new BrowserWindow(args)

@@ -169,6 +169,21 @@ class AtomApplication
 
     @on 'application:quit', -> app.quit()
     @on 'application:new-window', -> @openPath(_.extend(windowDimensions: @focusedWindow()?.getDimensions(), getLoadSettings()))
+    @on 'application:new-popout-terminal', ->
+      windowInitializationScript = require.resolve('../initialize-application-window')
+      resourcePath = @resourcePath
+      devMode = false
+      safeMode = false
+      windowDimensions =
+        x: 250
+        y: 100
+        width: 750
+        height: 500
+      openedWindow = new AtomWindow({windowInitializationScript, resourcePath, devMode, safeMode, windowDimensions}, {resizable: false})
+      console.log openedWindow
+      openedWindow.browserWindow.once 'closed', =>
+        @killProcessForWindow(openedWindow)
+
     @on 'application:new-file', -> (@focusedWindow() ? this).openPath()
     @on 'application:open', -> @promptForPathToOpen('all', getLoadSettings())
     @on 'application:open-file', -> @promptForPathToOpen('file', getLoadSettings())

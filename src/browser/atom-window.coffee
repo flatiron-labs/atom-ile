@@ -18,7 +18,7 @@ class AtomWindow
   loaded: null
   isSpec: null
 
-  constructor: (settings={}) ->
+  constructor: (settings={}, termOptions={}) ->
     {@resourcePath, pathToOpen, locationsToOpen, @isSpec, @headless, @safeMode, @devMode} = settings
     locationsToOpen ?= [{pathToOpen}] if pathToOpen
     locationsToOpen ?= []
@@ -28,6 +28,9 @@ class AtomWindow
       title: 'Learn IDE'
       'web-preferences':
         'direct-write': true
+
+    if termOptions.resizable != null
+      options.resizable = termOptions.resizable
 
     if @isSpec
       options['web-preferences']['page-visibility'] = true

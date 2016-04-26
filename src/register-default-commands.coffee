@@ -27,6 +27,7 @@ module.exports = ({commandRegistry, commandInstaller, config}) ->
     'application:install-update': -> ipc.send('command', 'application:install-update')
     'application:unhide-all-applications': -> ipc.send('command', 'application:unhide-all-applications')
     'application:new-window': -> ipc.send('command', 'application:new-window')
+    'application:new-popout-terminal': -> ipc.send('command', 'application:new-popout-terminal')
     'application:new-file': -> ipc.send('command', 'application:new-file')
     'application:open': -> ipc.send('command', 'application:open')
     'application:open-file': -> ipc.send('command', 'application:open-file')

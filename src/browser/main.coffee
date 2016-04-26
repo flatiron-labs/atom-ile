@@ -55,10 +55,6 @@ start = ->
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
 
-    ############################################################################
-    ##################   NOTIFICATION CODE TO REFACTOR LATER ###################
-    ############################################################################
-
     ipc.on 'register-for-notifications', (event, oauthToken) =>
       if !app.learnNotifManager
         app.learnNotifManager = new LearnNotificationManager(oauthToken)
@@ -78,10 +74,6 @@ start = ->
             app.registeredFsConnections[0].send 'new-notification', data
           else
             console.log 'No available render processes to receive notification.'
-
-    ############################################################################
-    ########################## END NOTIFICATION CODE ###########################
-    ############################################################################
 
     ipc.on 'new-update-window', (event, args) ->
       win = new BrowserWindow(args)

@@ -184,6 +184,10 @@ start = ->
       app.registeredTerminals = app.registeredTerminals.filter((el) -> el != event.sender)
       app.registeredFsConnections = app.registeredFsConnections.filter((el) -> el != event.sender)
 
+    app.on 'close-terminal-window', (event) ->
+      for conn in app.registeredFsConnections
+        conn.send 'terminal-popped-in'
+
     AtomApplication = require path.join(args.resourcePath, 'src', 'browser', 'atom-application')
     AtomApplication.open(args)
 

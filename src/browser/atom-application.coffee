@@ -182,6 +182,7 @@ class AtomApplication
       openedWindow = new AtomWindow({windowInitializationScript, resourcePath, devMode, safeMode, windowDimensions}, {resizable: false})
       openedWindow.browserWindow.once 'closed', =>
         @killProcessForWindow(openedWindow)
+        app.emit 'close-terminal-window'
 
     @on 'application:new-file', -> (@focusedWindow() ? this).openPath()
     @on 'application:open', -> @promptForPathToOpen('all', getLoadSettings())

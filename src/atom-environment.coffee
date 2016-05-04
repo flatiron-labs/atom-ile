@@ -836,8 +836,8 @@ class AtomEnvironment extends Model
     @storageFolder ?= new StorageFolder(@getConfigDirPath())
 
   getUserInitScriptPath: ->
-    initScriptPath = fs.resolve(@getConfigDirPath(), 'init', ['js', 'coffee'])
-    initScriptPath ? path.join(@getConfigDirPath(), 'init.coffee')
+    initScriptPath = fs.resolve(@getConfigDirPath(), 'ide-init', ['js', 'coffee'])
+    initScriptPath ? path.join(@getConfigDirPath(), 'ide-init.coffee')
 
   getUserWorkingDirPath: ->
     mkdirp(@getConfigDirPath() + '/code')

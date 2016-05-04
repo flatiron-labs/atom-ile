@@ -9,8 +9,3 @@
 # atom.workspace.observeTextEditors (editor) ->
 #   editor.onDidSave ->
 #     console.log "Saved! #{editor.getPath()}"
-
-workspaceView = atom.views.getView(atom.workspace)
-atom.commands.dispatch(workspaceView, 'tree-view:show')
-atom.project.setPaths([atom.getUserWorkingDirPath()])
-atom.commands.dispatch(workspaceView, 'integrated-learn-environment:toggleTerminal')

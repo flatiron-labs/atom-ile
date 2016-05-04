@@ -45,10 +45,10 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>atom</string>
+				<string>learn-ide</string>
 			</array>
 			<key>CFBundleURLName</key>
-			<string>Atom Shared Session Protocol</string>
+			<string>Learn IDE Shared Session Protocol</string>
 		</dict>
 	</array>
 	<key>CFBundleDocumentTypes</key>

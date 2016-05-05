@@ -56,7 +56,7 @@ class CommandInstaller
     programName = if @appVersion.includes("beta")
       "atom-beta"
     else
-      "atom"
+      "learn-ide"
 
     commandPath = path.join(@getResourcesDirectory(), 'app', 'atom.sh')
     @createSymlink commandPath, programName, askForPrivilege, callback

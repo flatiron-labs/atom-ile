@@ -286,11 +286,15 @@ resetFsWebSocketConnection = ->
           when 'remote_create'
             if event.directory
               fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+              remoteLog('Made sure this existed: ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
             else
               fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location))
+              remoteLog('Made sure this existed: ' + app.workingDirPath + app.sep + formatFilePath(event.location))
 
               fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, '')
+              remoteLog('Wrote some empty content to this: ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
 
+              remoteLog('Requesting content after remote_create for: location: ' + event.location + ' file: ' + event.file)
               app.fsWebSocket.send JSON.stringify({
                 action: 'request_content',
                 location: event.location,
@@ -299,6 +303,7 @@ resetFsWebSocketConnection = ->
           when 'content_response'
             writeableContent = new Buffer(event.content, 'base64')
 
+            remoteLog('Received content for: ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
             fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, writeableContent
           when 'remote_delete'
             if event.directory
@@ -334,10 +339,13 @@ resetFsWebSocketConnection = ->
                 })
           when 'remote_modify'
             if !event.directory
-              fs.makeTreeSync(app.workingDirPath + app.sepp + formatFilePath(event.location))
+              fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location))
+              remoteLog('Made sure this existed: ' + app.workingDirPath + app.sep + formatFilePath(event.location))
 
               fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, '')
+              remoteLog('Wrote some empty content to this: ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
 
+              remoteLog('Requesting content after remote_modify for: location: ' + event.location + ' file: ' + event.file)
               app.fsWebSocket.send JSON.stringify({
                 action: 'request_content',
                 location: event.location,

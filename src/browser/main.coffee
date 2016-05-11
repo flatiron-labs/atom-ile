@@ -19,6 +19,7 @@ shell      = require 'shell'
 BrowserWindow = require 'browser-window'
 querystring = require 'querystring'
 LearnNotificationManager = require './learn-notification-manager'
+dialog = require 'dialog'
 
 start = ->
   args = parseCommandLine()
@@ -74,6 +75,34 @@ start = ->
             app.registeredFsConnections[0].send 'new-notification', data
           else
             console.log 'No available render processes to receive notification.'
+
+    ipc.on 'import-file', (event, targetPath) ->
+      dialog.showOpenDialog
+        title: 'Import File'
+        properties: ['openFile']
+      , (paths) ->
+        if targetPath && typeof paths != undefined
+          content = fs.readFileSync(paths[0])
+          destPath = targetPath + app.sep + path.basename(paths[0])
+          fs.writeFileSync(destPath, content)
+
+          if destPath.match(/:\\/)
+            destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+            projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+          else
+            projectPath = app.workingDirPath
+
+          remoteLog 'Project Path: ' + projectPath
+          remoteLog 'Destination Path: ' + destPath
+
+          app.fsWebSocket.send JSON.stringify
+            action: 'local_save'
+            project:
+              path: projectPath
+            file:
+              path: destPath
+            buffer:
+              content: new Buffer(content).toString('base64')
 
     ipc.on 'new-update-window', (event, args) ->
       win = new BrowserWindow(args)

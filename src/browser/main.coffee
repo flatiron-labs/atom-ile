@@ -84,27 +84,43 @@ start = ->
         if targetPath && typeof paths != undefined
           try
             content = fs.readFileSync(paths[0])
+            encodedContent = new Buffer(content).toString('base64')
+            byteLength = Buffer.byteLength(encodedContent, 'base64')
             destPath = targetPath + app.sep + path.basename(paths[0])
-            fs.writeFileSync(destPath, content)
 
-            if destPath.match(/:\\/)
-              destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-              projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+            if byteLength <= 752000
+              fs.writeFileSync(destPath, content)
+
+              if destPath.match(/:\\/)
+                destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+                projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+              else
+                projectPath = app.workingDirPath
+
+              remoteLog 'Project Path: ' + projectPath
+              remoteLog 'Destination Path: ' + destPath
+
+
+              app.fsWebSocket.send JSON.stringify
+                action: 'local_save'
+                project:
+                  path: projectPath
+                file:
+                  path: destPath
+                buffer:
+                  content: encodedContent
+
+              event.sender.send 'in-app-notification',
+                type: 'success'
+                message: 'File successfully imported.'
+                dismissable: false
             else
-              projectPath = app.workingDirPath
+              event.sender.send 'in-app-notification',
+                type: 'error'
+                message: 'The file you are attempting to import is too large. Please resize it and try again.'
+                detail: 'The maximum file size is 0.75Mb (750Kb).'
+                dismissable: true
 
-            remoteLog 'Project Path: ' + projectPath
-            remoteLog 'Destination Path: ' + destPath
-
-            app.fsWebSocket.send JSON.stringify
-              action: 'local_save'
-              project:
-                path: projectPath
-              file:
-                path: destPath
-              buffer:
-                content: new Buffer(content).toString('base64')
-            console.log app.fsWebSocket
           catch err
             console.log 'Error importing file'
             console.log err

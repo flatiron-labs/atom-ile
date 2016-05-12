@@ -170,6 +170,7 @@ class AtomApplication
     @on 'application:quit', -> app.quit()
     @on 'application:new-window', -> @openPath(_.extend(windowDimensions: @focusedWindow()?.getDimensions(), getLoadSettings()))
     @on 'application:new-popout-terminal', ->
+      app.currentDimensions ?= @focusedWindow()?.getDimensions()
       windowInitializationScript = require.resolve('../initialize-terminal-window')
       resourcePath = @resourcePath
       devMode = false
@@ -435,7 +436,9 @@ class AtomApplication
 
       windowInitializationScript ?= require.resolve('../initialize-application-window')
       resourcePath ?= @resourcePath
-      openedWindow = new AtomWindow({locationsToOpen, windowInitializationScript, resourcePath, devMode, safeMode, windowDimensions, profileStartup})
+
+      overriddenDimensions = if app.currentDimensions then app.currentDimensions else null
+      openedWindow = new AtomWindow({locationsToOpen, windowInitializationScript, resourcePath, devMode, safeMode, windowDimensions, profileStartup}, {overriddenDimensions: overriddenDimensions})
 
     if pidToKillWhenClosed?
       @pidsToOpenWindows[pidToKillWhenClosed] = openedWindow

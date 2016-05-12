@@ -18,7 +18,7 @@ class AtomWindow
   loaded: null
   isSpec: null
 
-  constructor: (settings={}, termOptions={}) ->
+  constructor: (settings={}, extraOptions={}) ->
     {@resourcePath, pathToOpen, locationsToOpen, @isSpec, @headless, @safeMode, @devMode} = settings
     locationsToOpen ?= [{pathToOpen}] if pathToOpen
     locationsToOpen ?= []
@@ -29,8 +29,14 @@ class AtomWindow
       'web-preferences':
         'direct-write': true
 
-    if termOptions.resizable != null
-      options.resizable = termOptions.resizable
+    if extraOptions.resizable != null
+      options.resizable = extraOptions.resizable
+
+    if extraOptions.overriddenDimensions
+      options.width = extraOptions.overriddenDimensions.width
+      options.height = extraOptions.overriddenDimensions.height
+      options.x = extraOptions.overriddenDimensions.x
+      options.y = extraOptions.overriddenDimensions.y
 
     if @isSpec
       options['web-preferences']['page-visibility'] = true
@@ -71,6 +77,16 @@ class AtomWindow
     @browserWindow.once 'window:loaded', =>
       @emit 'window:loaded'
       @loaded = true
+
+      if extraOptions.overriddenDimensions
+        [newWidth, newHeight] = [extraOptions.overriddenDimensions.width, extraOptions.overriddenDimensions.height]
+        [newX, newY] = [extraOptions.overriddenDimensions.x, extraOptions.overriddenDimensions.y]
+        [currentWidth, currentHeight] = @browserWindow.getSize()
+        [currentX, currentY] = @browserWindow.getPosition()
+
+        if newWidth != currentWidth || newHeight != currentHeight || newX != currentX || newY != currentY
+          @browserWindow.setPosition newX, newY
+          @browserWindow.setSize newWidth, newHeight
 
     @setLoadSettings(loadSettings)
     @browserWindow.focusOnWebView() if @isSpec

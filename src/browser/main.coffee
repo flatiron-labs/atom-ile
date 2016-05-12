@@ -94,6 +94,7 @@ start = ->
 
           remoteLog 'Project Path: ' + projectPath
           remoteLog 'Destination Path: ' + destPath
+          remoteLog 'Stringified: ' + new Buffer(content).toString('base64')
 
           app.fsWebSocket.send JSON.stringify
             action: 'local_save'

@@ -82,28 +82,32 @@ start = ->
         properties: ['openFile']
       , (paths) ->
         if targetPath && typeof paths != undefined
-          content = fs.readFileSync(paths[0])
-          destPath = targetPath + app.sep + path.basename(paths[0])
-          fs.writeFileSync(destPath, content)
+          try
+            content = fs.readFileSync(paths[0])
+            destPath = targetPath + app.sep + path.basename(paths[0])
+            fs.writeFileSync(destPath, content)
 
-          if destPath.match(/:\\/)
-            destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-            projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-          else
-            projectPath = app.workingDirPath
+            if destPath.match(/:\\/)
+              destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+              projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+            else
+              projectPath = app.workingDirPath
 
-          remoteLog 'Project Path: ' + projectPath
-          remoteLog 'Destination Path: ' + destPath
-          remoteLog 'Stringified: ' + new Buffer(content).toString('base64')
+            remoteLog 'Project Path: ' + projectPath
+            remoteLog 'Destination Path: ' + destPath
 
-          app.fsWebSocket.send JSON.stringify
-            action: 'local_save'
-            project:
-              path: projectPath
-            file:
-              path: destPath
-            buffer:
-              content: new Buffer(content).toString('base64')
+            app.fsWebSocket.send JSON.stringify
+              action: 'local_save'
+              project:
+                path: projectPath
+              file:
+                path: destPath
+              buffer:
+                content: new Buffer(content).toString('base64')
+            console.log app.fsWebSocket
+          catch err
+            console.log 'Error importing file'
+            console.log err
 
     ipc.on 'new-update-window', (event, args) ->
       win = new BrowserWindow(args)
@@ -287,7 +291,7 @@ resetTermWebSocketConnection = ->
 
 resetFsWebSocketConnection = ->
   app.fsConnectionStatus = 0
-  app.fsWebSocket = new WebSocket(app.fsSocketUrl)
+  app.fsWebSocket = new WebSocket(app.fsSocketUrl, null, null, null, null, {fragmentOutgoingMessages: false})
 
   app.fsWebSocket.onopen = (e) =>
     app.fsConnectionStatus = 1

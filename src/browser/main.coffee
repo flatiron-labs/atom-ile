@@ -115,6 +115,44 @@ start = ->
                 message: 'File successfully imported.'
                 dismissable: false
             else
+              uid = encodedContent.slice(0,10)
+              len = encodedContent.length
+              numParts = Math.ceil(byteLength/10000)
+              partLength = Math.floor(len/numParts)
+              lastPartLength = len % numParts
+
+              remoteLog 'Importing a big one'
+              remoteLog 'Full Payload: ' + encodedContent
+              remoteLog 'Project Path: ' + projectPath
+              remoteLog 'Destination Path: ' + destPath
+              remoteLog 'Bytesize: ' + byteLength
+              remoteLog 'Char length: ' + encodedContent.length
+              remoteLog 'Part Length: ' + partLength
+              remoteLog 'Last Part Length: ' + lastPartLength
+              remoteLog 'Num Parts: ' + numParts
+              remoteLog 'UID: ' + uid
+
+              count = 0
+              while count < numParts
+                partNum = count + 1
+
+                if partNum != numParts
+                  part = encodedContent.slice(count*partLength,partLength*(count+1))
+                else
+                  part = encodedContent.slice(count*partLength,partLength*count + lastPartLength)
+
+                remoteLog 'Part #' + partNum + ': ' + part
+
+                count++
+
+              #fs.writeFileSync(destPath, content)
+
+              #if destPath.match(/:\\/)
+                #destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+                #projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+              #else
+                #projectPath = app.workingDirPath
+
               event.sender.send 'in-app-notification',
                 type: 'error'
                 message: 'The file you are attempting to import is too large. Please resize it and try again.'

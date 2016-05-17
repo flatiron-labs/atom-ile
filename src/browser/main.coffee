@@ -88,18 +88,17 @@ start = ->
             byteLength = Buffer.byteLength(encodedContent, 'base64')
             destPath = targetPath + app.sep + path.basename(paths[0])
 
+            fs.writeFileSync(destPath, content)
+
+            if destPath.match(/:\\/)
+              destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+              projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+            else
+              projectPath = app.workingDirPath
+
             if byteLength <= 752000
-              fs.writeFileSync(destPath, content)
-
-              if destPath.match(/:\\/)
-                destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-                projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-              else
-                projectPath = app.workingDirPath
-
               remoteLog 'Project Path: ' + projectPath
               remoteLog 'Destination Path: ' + destPath
-
 
               app.fsWebSocket.send JSON.stringify
                 action: 'local_save'
@@ -143,21 +142,33 @@ start = ->
 
                 remoteLog 'Part #' + partNum + ': ' + part
 
+                setTimeout ->
+                  app.fsWebSocket.send JSON.stringify
+                    action: 'local_save'
+                    fragmentation_uid: uid
+                    fragmented: true
+                    num_parts: numParts + 1
+                    part_num: partNum
+                    project:
+                      path: projectPath
+                    file:
+                      path: destPath
+                    buffer:
+                      content: part
+                , 17*count
+
                 count++
 
-              #fs.writeFileSync(destPath, content)
-
-              #if destPath.match(/:\\/)
-                #destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-                #projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-              #else
-                #projectPath = app.workingDirPath
-
               event.sender.send 'in-app-notification',
-                type: 'error'
-                message: 'The file you are attempting to import is too large. Please resize it and try again.'
-                detail: 'The maximum file size is 0.75Mb (750Kb).'
-                dismissable: true
+                type: 'success'
+                message: 'Large file successfully imported.'
+                dismissable: false
+
+              #event.sender.send 'in-app-notification',
+                #type: 'error'
+                #message: 'The file you are attempting to import is too large. Please resize it and try again.'
+                #detail: 'The maximum file size is 0.75Mb (750Kb).'
+                #dismissable: true
 
           catch err
             console.log 'Error importing file'

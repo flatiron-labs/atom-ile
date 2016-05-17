@@ -117,7 +117,7 @@ start = ->
             else
               uid = encodedContent.slice(0,10)
               len = encodedContent.length
-              numParts = Math.ceil(byteLength/10000)
+              numParts = Math.floor(byteLength/10000)
               partLength = Math.floor(len/numParts)
               lastPartLength = len % numParts
 
@@ -133,10 +133,10 @@ start = ->
               remoteLog 'UID: ' + uid
 
               count = 0
-              while count < numParts
+              while count <= numParts
                 partNum = count + 1
 
-                if partNum != numParts
+                if count != numParts
                   part = encodedContent.slice(count*partLength,partLength*(count+1))
                 else
                   part = encodedContent.slice(count*partLength,partLength*count + lastPartLength)

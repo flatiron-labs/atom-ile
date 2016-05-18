@@ -116,46 +116,41 @@ start = ->
             else
               uid = encodedContent.slice(0,10)
               len = encodedContent.length
-              numParts = Math.floor(byteLength/10000)
+              numParts = Math.floor(byteLength/12000)
               partLength = Math.floor(len/numParts)
               lastPartLength = len % numParts
 
               remoteLog 'Importing a big one'
-              remoteLog 'Full Payload: ' + encodedContent
-              remoteLog 'Project Path: ' + projectPath
-              remoteLog 'Destination Path: ' + destPath
-              remoteLog 'Bytesize: ' + byteLength
-              remoteLog 'Char length: ' + encodedContent.length
-              remoteLog 'Part Length: ' + partLength
-              remoteLog 'Last Part Length: ' + lastPartLength
-              remoteLog 'Num Parts: ' + numParts
-              remoteLog 'UID: ' + uid
 
               count = 0
               while count <= numParts
-                partNum = count + 1
+                ((c) ->
+                  partNum = c + 1
 
-                if count != numParts
-                  part = encodedContent.slice(count*partLength,partLength*(count+1))
-                else
-                  part = encodedContent.slice(count*partLength,partLength*count + lastPartLength)
+                  if c != numParts
+                    part = encodedContent.slice(c*partLength,partLength*(c+1))
+                  else
+                    part = encodedContent.slice(c*partLength,partLength*c + lastPartLength)
 
-                remoteLog 'Part #' + partNum + ': ' + part
+                  setTimeout ->
+                    remoteLog 'Sending part #' + partNum
+                    app.fsWebSocket.send JSON.stringify
+                      action: 'local_save'
+                      fragmentation_uid: uid
+                      fragmented: true
+                      num_parts: (numParts + 1)
+                      part_num: partNum
+                      project:
+                        path: projectPath
+                      file:
+                        path: destPath
+                      buffer:
+                        content: part
+                  , 1*count
 
-                setTimeout ->
-                  app.fsWebSocket.send JSON.stringify
-                    action: 'local_save'
-                    fragmentation_uid: uid
-                    fragmented: true
-                    num_parts: numParts + 1
-                    part_num: partNum
-                    project:
-                      path: projectPath
-                    file:
-                      path: destPath
-                    buffer:
-                      content: part
-                , 17*count
+                  if c == numParts
+                    remoteLog 'Done.'
+                ) count
 
                 count++
 

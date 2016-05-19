@@ -146,24 +146,35 @@ start = ->
                         path: destPath
                       buffer:
                         content: part
+
                   , 1*count
 
-                  if c == numParts
-                    remoteLog 'Done.'
+                  setTimeout ->
+                    partPercent = 1/(numParts + 1)
+                    progress = partPercent*partNum
+                    remoteLog 'Sending progress bar update.'
+                    remoteLog 'Current percent: ' + progress
+                    event.sender.send 'progress-bar-update', progress
+
+                    if c == numParts
+                      remoteLog 'Done.'
+                      event.sender.send 'progress-bar-update', -1
+                      event.sender.send 'in-app-notification',
+                        type: 'success'
+                        message: 'File successfully imported.'
+                        dismissable: false
+                  , 17*count
+
                 ) count
 
                 count++
 
+              uploadSeconds = Math.round((17 * (numParts + 1)) / 1000)
               event.sender.send 'in-app-notification',
-                type: 'success'
-                message: 'Large file successfully imported.'
+                type: 'warning'
+                message: 'You are importing a large file. This may take a little while.'
+                detail: 'Approximate upload time: ' + uploadSeconds + ' seconds.'
                 dismissable: false
-
-              #event.sender.send 'in-app-notification',
-                #type: 'error'
-                #message: 'The file you are attempting to import is too large. Please resize it and try again.'
-                #detail: 'The maximum file size is 0.75Mb (750Kb).'
-                #dismissable: true
 
           catch err
             console.log 'Error importing file'

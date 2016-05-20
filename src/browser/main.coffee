@@ -88,93 +88,97 @@ start = ->
             byteLength = Buffer.byteLength(encodedContent, 'base64')
             destPath = targetPath + app.sep + path.basename(paths[0])
 
-            fs.writeFileSync(destPath, content)
-
-            if destPath.match(/:\\/)
-              destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-              projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-            else
-              projectPath = app.workingDirPath
-
-            if byteLength <= 752000
-              remoteLog 'Project Path: ' + projectPath
-              remoteLog 'Destination Path: ' + destPath
-
-              app.fsWebSocket.send JSON.stringify
-                action: 'local_save'
-                project:
-                  path: projectPath
-                file:
-                  path: destPath
-                buffer:
-                  content: encodedContent
-
+            if byteLength >= 15000000
               event.sender.send 'in-app-notification',
-                type: 'success'
-                message: 'File successfully imported.'
-                dismissable: false
+                type: 'error'
+                message: 'That file is too large to import. Please resize and try again.'
+                detail: 'The maximum file size is 15mb.'
+                dismissable: true
             else
-              uid = encodedContent.slice(0,10)
-              len = encodedContent.length
-              numParts = Math.floor(byteLength/12000)
-              partLength = Math.floor(len/numParts)
-              lastPartLength = len % numParts
+              fs.writeFileSync(destPath, content)
 
-              remoteLog 'Importing a big one'
+              if destPath.match(/:\\/)
+                destPath = destPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+                projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
+              else
+                projectPath = app.workingDirPath
 
-              count = 0
-              while count <= numParts
-                ((c) ->
-                  partNum = c + 1
+              if byteLength <= 752000
+                remoteLog 'Project Path: ' + projectPath
+                remoteLog 'Destination Path: ' + destPath
 
-                  if c != numParts
-                    part = encodedContent.slice(c*partLength,partLength*(c+1))
-                  else
-                    part = encodedContent.slice(c*partLength,partLength*c + lastPartLength)
+                app.fsWebSocket.send JSON.stringify
+                  action: 'local_save'
+                  project:
+                    path: projectPath
+                  file:
+                    path: destPath
+                  buffer:
+                    content: encodedContent
 
-                  setTimeout ->
-                    remoteLog 'Sending part #' + partNum
-                    app.fsWebSocket.send JSON.stringify
-                      action: 'local_save'
-                      fragmentation_uid: uid
-                      fragmented: true
-                      num_parts: (numParts + 1)
-                      part_num: partNum
-                      project:
-                        path: projectPath
-                      file:
-                        path: destPath
-                      buffer:
-                        content: part
+                event.sender.send 'in-app-notification',
+                  type: 'success'
+                  message: 'File successfully imported.'
+                  dismissable: false
+              else
+                uid = encodedContent.slice(0,10)
+                len = encodedContent.length
+                numParts = Math.floor(byteLength/42000)
+                partLength = Math.floor(len/numParts)
+                lastPartLength = len % numParts
 
-                  , 1*count
+                remoteLog 'Importing a big one'
 
-                  setTimeout ->
-                    partPercent = 1/(numParts + 1)
-                    progress = partPercent*partNum
-                    remoteLog 'Sending progress bar update.'
-                    remoteLog 'Current percent: ' + progress
-                    event.sender.send 'progress-bar-update', progress
+                count = 0
+                while count <= numParts
+                  ((c) ->
+                    partNum = c + 1
 
-                    if c == numParts
-                      remoteLog 'Done.'
-                      event.sender.send 'progress-bar-update', -1
-                      event.sender.send 'in-app-notification',
-                        type: 'success'
-                        message: 'File successfully imported.'
-                        dismissable: false
-                  , 17*count
+                    if c != numParts
+                      part = encodedContent.slice(c*partLength,partLength*(c+1))
+                    else
+                      part = encodedContent.slice(c*partLength,partLength*c + lastPartLength)
 
-                ) count
+                    setTimeout ->
+                      remoteLog 'Sending part #' + partNum
+                      app.fsWebSocket.send JSON.stringify
+                        action: 'local_save'
+                        fragmentation_uid: uid
+                        fragmented: true
+                        num_parts: (numParts + 1)
+                        part_num: partNum
+                        project:
+                          path: projectPath
+                        file:
+                          path: destPath
+                        buffer:
+                          content: part
 
-                count++
+                    , 1*count
 
-              uploadSeconds = Math.round((17 * (numParts + 1)) / 1000)
-              event.sender.send 'in-app-notification',
-                type: 'warning'
-                message: 'You are importing a large file. This may take a little while.'
-                detail: 'Approximate upload time: ' + uploadSeconds + ' seconds.'
-                dismissable: false
+                    setTimeout ->
+                      partPercent = 1/(numParts + 1)
+                      progress = partPercent*partNum
+                      event.sender.send 'progress-bar-update', progress
+
+                      if c == numParts
+                        event.sender.send 'progress-bar-update', -1
+                        event.sender.send 'in-app-notification',
+                          type: 'success'
+                          message: 'File successfully imported.'
+                          dismissable: false
+                    , 17*count
+
+                  ) count
+
+                  count++
+
+                #uploadSeconds = Math.round((17 * (numParts + 1)) / 1000)
+                #event.sender.send 'in-app-notification',
+                  #type: 'warning'
+                  #message: 'You are importing a large file. This may take a little while.'
+                  #detail: 'Approximate upload time: ' + uploadSeconds + ' seconds.'
+                  #dismissable: false
 
           catch err
             console.log 'Error importing file'

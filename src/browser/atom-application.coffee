@@ -523,6 +523,10 @@ class AtomApplication
           blobStore.set("learnOpenUrl", "learn-open-url-key", new Buffer(openPath))
           blobStore.save()
 
+          if @windows.length
+            console.log @windows
+            console.log 'existing window!'
+
         new AtomWindow({windowInitializationScript, @resourcePath, devMode, safeMode, urlToOpen, windowDimensions})
       else
         console.log "Package '#{pack.name}' does not have a url main: #{urlToOpen}"

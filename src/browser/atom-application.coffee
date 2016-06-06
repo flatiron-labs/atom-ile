@@ -515,13 +515,17 @@ class AtomApplication
         packagePath = @packages.resolvePackagePath(packageName)
         windowInitializationScript = path.resolve(packagePath, pack.urlMain)
         windowDimensions = @focusedWindow()?.getDimensions()
-        if packageName == 'integrated-learn-environment'
-          blobStore = FileSystemBlobStore.load(
-            path.join(process.env.ATOM_HOME, 'blob-store/')
-          )
+        if packageName is 'integrated-learn-environment'
           openPath = url.parse(urlToOpen).pathname.substring(1)
-          blobStore.set("learnOpenUrl", "learn-open-url-key", new Buffer(openPath))
-          blobStore.save()
+          if @windows.length
+            @lastFocusedWindow.sendCommand('integrated-learn-environment:open', openPath)
+            return
+          else
+            blobStore = FileSystemBlobStore.load(
+              path.join(process.env.ATOM_HOME, 'blob-store/')
+            )
+            blobStore.set("learnOpenUrl", "learn-open-url-key", new Buffer(openPath))
+            blobStore.save()
 
         new AtomWindow({windowInitializationScript, @resourcePath, devMode, safeMode, urlToOpen, windowDimensions})
       else

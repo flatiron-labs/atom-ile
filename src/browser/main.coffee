@@ -88,7 +88,13 @@ start = ->
             byteLength = Buffer.byteLength(encodedContent, 'base64')
             destPath = targetPath + app.sep + path.basename(paths[0])
 
-            if byteLength <= 752000
+            if byteLength >= 15000000
+              event.sender.send 'in-app-notification',
+                type: 'error'
+                message: 'That file is too large to import. Please resize and try again.'
+                detail: 'The maximum file size is 15mb.'
+                dismissable: true
+            else
               fs.writeFileSync(destPath, content)
 
               if destPath.match(/:\\/)
@@ -97,29 +103,82 @@ start = ->
               else
                 projectPath = app.workingDirPath
 
-              remoteLog 'Project Path: ' + projectPath
-              remoteLog 'Destination Path: ' + destPath
+              if byteLength <= 752000
+                remoteLog 'Project Path: ' + projectPath
+                remoteLog 'Destination Path: ' + destPath
 
+                app.fsWebSocket.send JSON.stringify
+                  action: 'local_save'
+                  project:
+                    path: projectPath
+                  file:
+                    path: destPath
+                  buffer:
+                    content: encodedContent
 
-              app.fsWebSocket.send JSON.stringify
-                action: 'local_save'
-                project:
-                  path: projectPath
-                file:
-                  path: destPath
-                buffer:
-                  content: encodedContent
+                event.sender.send 'in-app-notification',
+                  type: 'success'
+                  message: 'File successfully imported.'
+                  dismissable: false
+              else
+                uid = encodedContent.slice(0,10)
+                len = encodedContent.length
+                numParts = Math.floor(byteLength/42000)
+                partLength = Math.floor(len/numParts)
+                lastPartLength = len % numParts
 
-              event.sender.send 'in-app-notification',
-                type: 'success'
-                message: 'File successfully imported.'
-                dismissable: false
-            else
-              event.sender.send 'in-app-notification',
-                type: 'error'
-                message: 'The file you are attempting to import is too large. Please resize it and try again.'
-                detail: 'The maximum file size is 0.75Mb (750Kb).'
-                dismissable: true
+                remoteLog 'Importing a big one'
+
+                count = 0
+                while count <= numParts
+                  ((c) ->
+                    partNum = c + 1
+
+                    if c != numParts
+                      part = encodedContent.slice(c*partLength,partLength*(c+1))
+                    else
+                      part = encodedContent.slice(c*partLength,partLength*c + lastPartLength)
+
+                    setTimeout ->
+                      remoteLog 'Sending part #' + partNum
+                      app.fsWebSocket.send JSON.stringify
+                        action: 'local_save'
+                        fragmentation_uid: uid
+                        fragmented: true
+                        num_parts: (numParts + 1)
+                        part_num: partNum
+                        project:
+                          path: projectPath
+                        file:
+                          path: destPath
+                        buffer:
+                          content: part
+
+                    , 1*count
+
+                    setTimeout ->
+                      partPercent = 1/(numParts + 1)
+                      progress = partPercent*partNum
+                      event.sender.send 'progress-bar-update', progress
+
+                      if c == numParts
+                        event.sender.send 'progress-bar-update', -1
+                        event.sender.send 'in-app-notification',
+                          type: 'success'
+                          message: 'File successfully imported.'
+                          dismissable: false
+                    , 17*count
+
+                  ) count
+
+                  count++
+
+                #uploadSeconds = Math.round((17 * (numParts + 1)) / 1000)
+                #event.sender.send 'in-app-notification',
+                  #type: 'warning'
+                  #message: 'You are importing a large file. This may take a little while.'
+                  #detail: 'Approximate upload time: ' + uploadSeconds + ' seconds.'
+                  #dismissable: false
 
           catch err
             console.log 'Error importing file'

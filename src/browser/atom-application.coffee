@@ -518,7 +518,7 @@ class AtomApplication
         if packageName is 'integrated-learn-environment'
           openPath = url.parse(urlToOpen).pathname.substring(1)
           if @windows.length
-            @lastFocusedWindow.sendCommand('integrated-learn-environment:open', openPath)
+            @lastFocusedWindow.sendCommand('integrated-learn-environment:open', {path: openPath})
             return
           else
             blobStore = FileSystemBlobStore.load(

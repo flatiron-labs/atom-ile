@@ -1,7 +1,7 @@
 {
   "name": "atom",
   "productName": "Learn IDE",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Integrated Learning Environment for Learn.co / Fork of Atom.io",
   "main": "./src/browser/main.js",
   "repository": {

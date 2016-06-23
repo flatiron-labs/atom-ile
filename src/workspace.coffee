@@ -405,7 +405,6 @@ class Workspace extends Model
   #
   # Returns a promise that resolves to the {TextEditor} for the file URI.
   open: (uri, options={}) ->
-    console.log('OPENED HERE! ' + uri)
     searchAllPanes = options.searchAllPanes
     split = options.split
     uri = @project.resolvePath(uri)

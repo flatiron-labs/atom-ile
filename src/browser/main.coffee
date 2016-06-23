@@ -52,6 +52,7 @@ start = ->
     app.fsConnectionStatus   = 0
     app.termConnectionStatus = 0
     app.moveQueue = []
+    app.largeFileQueue = {}
 
     fs.makeTreeSync(process.env.ATOM_HOME + '/code')
     app.workingDirPath = path.join(process.env.ATOM_HOME, 'code')
@@ -410,10 +411,27 @@ resetFsWebSocketConnection = ->
                 file: event.file
               })
           when 'content_response'
-            writeableContent = new Buffer(event.content, 'base64')
+            if event.fragmented
+              remoteLog('Received partial content (part ' + event.part_num + ' of ' + event.num_parts + ') for: ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+              uid = event.fragmentation_uid
+              app.largeFileQueue[uid] ?= {}
+              largeFile = app.largeFileQueue[uid]
+              largeFile['partsReceived'] ?= 0
+              largeFile['numParts'] ?= event.num_parts
+              largeFile['parts'] ?= []
+              largeFile['parts'][event.part_num - 1] = event.content
+              largeFile['partsReceived'] += 1
 
-            remoteLog('Received content for: ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
-            fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, writeableContent
+              if largeFile['partsReceived'] == largeFile['numParts']
+                fullyReceived = true
+                event.content = largeFile['parts'].join()
+                delete app.largeFileQueue[uid]
+
+            if !event.fragmented || fullyReceived
+              writeableContent = new Buffer(event.content, 'base64')
+
+              remoteLog('Received content for: ' + app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
+              fs.writeFileSync app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file, writeableContent
           when 'remote_delete'
             if event.directory
               shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)

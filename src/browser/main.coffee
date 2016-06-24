@@ -261,6 +261,12 @@ start = ->
     ipc.on 'fs-local-delete', (event, payload) ->
       app.fsWebSocket.send payload
 
+    ipc.on 'fs-local-add-file', (event, payload) ->
+      app.fsWebSocket.send payload
+
+    ipc.on 'fs-local-add-folder', (event, payload) ->
+      app.fsWebSocket.send payload
+
     ipc.on 'register-new-terminal', (event, url) ->
       if app.registeredTerminals.length == 0 && (!app.terminalWebSocket || app.terminalWebSocket.readyState != app.terminalWebSocket.OPEN)
         app.termSocketUrl = url

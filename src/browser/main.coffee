@@ -277,7 +277,7 @@ start = ->
 
         # This happens when Atom had no windows open, but already had a socket
         # connection when a new window was opened
-        if app.registeredTerminals.length == 1
+        if app.registeredTerminals.length is 1
           app.terminalWebSocket.send('\u0003')
         else
           app.registeredTerminals[0].send 'request-terminal-view',
@@ -428,30 +428,15 @@ resetFsWebSocketConnection = ->
           when 'remote_moved_from'
             app.moveQueue.push(event)
           when 'remote_moved_to'
-            # TODO: Dry this the heck up
             movedFrom = app.moveQueue.shift()
             movedTo   = event
 
-            if movedFrom
-              if movedFrom.location.length
-                remoteLog(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
-                shell.moveItemToTrash(app.workingDirPath + app.sep + formatFilePath(movedFrom.location) + app.sep + movedFrom.file)
-              else
-                remoteLog(app.workingDirPath + app.sep + movedFrom.file)
-                shell.moveItemToTrash(app.workingDirPath + app.sep + movedFrom.file)
+            return unless movedFrom?
 
-              if movedTo.directory
-                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file)
-              else
-                fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location))
+            source = [app.workingDirPath, formatFilePath(movedFrom.location), movedFrom.file].join(app.sep)
+            target = [app.workingDirPath, formatFilePath(movedTo.location), movedTo.file].join(app.sep)
 
-                fs.writeFileSync(app.workingDirPath + app.sep + formatFilePath(movedTo.location) + app.sep + movedTo.file, '')
-
-                app.fsWebSocket.send JSON.stringify({
-                  action: 'request_content',
-                  location: movedTo.location,
-                  file: movedTo.file
-                })
+            fs.moveSync(source, target)
           when 'remote_modify'
             if !event.directory
               fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location))

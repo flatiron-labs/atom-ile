@@ -29,7 +29,7 @@ class AtomWindow
       'web-preferences':
         'direct-write': true
 
-    if extraOptions.resizable != null
+    if extraOptions.resizable?
       options.resizable = extraOptions.resizable
 
     if extraOptions.overriddenDimensions

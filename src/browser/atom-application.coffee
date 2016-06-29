@@ -180,7 +180,9 @@ class AtomApplication
         y: 100
         width: 750
         height: 500
-      openedWindow = new AtomWindow({windowInitializationScript, resourcePath, devMode, safeMode, windowDimensions}, {resizable: false})
+      options = {windowInitializationScript, resourcePath, devMode, safeMode, windowDimensions}
+      extraOptions = {resizable: false}
+      openedWindow = new AtomWindow(options, extraOptions)
       openedWindow.browserWindow.once 'closed', =>
         @killProcessForWindow(openedWindow)
         app.emit 'close-terminal-window'

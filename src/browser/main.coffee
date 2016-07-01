@@ -201,34 +201,6 @@ start = ->
       win.webContents.on 'did-finish-load', ->
         win.show()
 
-    ipc.on 'file-moved', (event, moveData) ->
-      if moveData.from.match(/:\\/)
-        fromPath = moveData.from.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-        toPath = moveData.to.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-        projectPath = app.workingDirPath.replace(/(.*:\\)/, '/').replace(/\\/g, '/')
-      else
-        fromPath = moveData.from
-        toPath = moveData.to
-        projectPath = app.workingDirPath
-
-      remoteLog('FROM PATH: ' + fromPath)
-      remoteLog('TO PATH: ' + toPath)
-      remoteLog('PROJECT PATH: ' + projectPath)
-
-      if fromPath.match(/\.atom\/code/)
-        payload = JSON.stringify({
-          action: 'local_move',
-          project: {
-            path: projectPath
-          },
-          file: {
-            path: toPath
-          },
-          from: fromPath
-        })
-
-        app.fsWebSocket.send payload
-
     ipc.on 'connection-state-request', (event) =>
       event.sender.send 'connection-state', connectedStatus()
 
@@ -255,16 +227,7 @@ start = ->
       for conn in app.registeredFsConnections
         conn.send 'connection-state', connectedStatus()
 
-    ipc.on 'fs-local-save', (event, payload) ->
-      app.fsWebSocket.send payload
-
-    ipc.on 'fs-local-delete', (event, payload) ->
-      app.fsWebSocket.send payload
-
-    ipc.on 'fs-local-add-file', (event, payload) ->
-      app.fsWebSocket.send payload
-
-    ipc.on 'fs-local-add-folder', (event, payload) ->
+    ipc.on 'fs-local-event', (event, payload) ->
       app.fsWebSocket.send payload
 
     ipc.on 'register-new-terminal', (event, url) ->

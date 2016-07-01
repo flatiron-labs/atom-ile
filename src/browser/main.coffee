@@ -401,7 +401,7 @@ resetFsWebSocketConnection = ->
 
             fs.moveSync(source, target)
           when 'remote_modify'
-            if !event.directory
+            if not event.directory
               fs.makeTreeSync(app.workingDirPath + app.sep + formatFilePath(event.location))
               remoteLog('Made sure this existed: ' + app.workingDirPath + app.sep + formatFilePath(event.location))
 
@@ -427,8 +427,8 @@ resetFsWebSocketConnection = ->
     catch err
       remoteErr(err)
 
-    #remoteLog('DATA: ' + e.data)
-    #remoteLog('SyncedFS debug: ' + e)
+    # remoteLog('DATA: ' + e.data)
+    # remoteLog('SyncedFS debug: ' + JSON.stringify(e))
 
 connected = ->
   return app.fsConnectionStatus + app.termConnectionStatus == 2
@@ -445,12 +445,7 @@ remoteLog = (message) ->
 
 remoteErr = (err, message) ->
   for conn in app.registeredFsConnections
-    if message
-      remoteLog(message + ' ' + err.message)
-    else
-      remoteLog(err.message)
-
-    remoteLog('Error in: ' + err.fileName + ':' + err.lineNumber)
+    remoteLog("fsErr: #{message} #{JSON.stringify(err)}")
 
 formatFilePath = (path) ->
   if app.isWindows

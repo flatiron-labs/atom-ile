@@ -443,9 +443,10 @@ remoteLog = (message) ->
     catch
       console.log 'Error sending remote logging to conn: ' + conn
 
-remoteErr = (err, message) ->
+remoteErr = (err) ->
+  return unless err.length
   for conn in app.registeredFsConnections
-    remoteLog("fsErr: #{message} #{JSON.stringify(err)}")
+    remoteLog("fsErr: #{err.message} #{JSON.stringify(err)}")
 
 formatFilePath = (path) ->
   if app.isWindows

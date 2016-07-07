@@ -24,7 +24,7 @@ module.exports =
     @fsView = new SyncedFSView(state, @fs)
 
     @subscriptions = new CompositeDisposable
-    @subscriptions.add atom.commands.add 'atom-workspace', 'integrated-learn-environment:toggleTerminal': =>
+    @subscriptions.add atom.commands.add 'atom-workspace', 'learn-ide:toggle-terminal': =>
       @termView.toggle()
 
   deactivate: ->

@@ -520,7 +520,7 @@ class AtomApplication
         if packageName is 'integrated-learn-environment'
           openPath = url.parse(urlToOpen).pathname.substring(1)
           if @windows.length
-            @lastFocusedWindow.sendCommand('integrated-learn-environment:open', {path: openPath})
+            @lastFocusedWindow.sendCommand('learn-ide:open', {path: openPath})
             @lastFocusedWindow.focus()
             return
           else

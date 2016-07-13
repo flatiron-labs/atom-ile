@@ -390,6 +390,9 @@ resetFsWebSocketConnection = ->
               fs.removeSync(app.workingDirPath + app.sep + formatFilePath(event.location) + app.sep + event.file)
           when 'remote_moved_from'
             app.moveQueue.push(event)
+          when 'remote_learn_submit'
+            for conn in app.registeredFsConnections
+              conn.send 'learn-submit-alert', event
           when 'remote_moved_to'
             movedFrom = app.moveQueue.shift()
             movedTo   = event

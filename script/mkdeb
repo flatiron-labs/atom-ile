@@ -15,6 +15,8 @@ CONTROL_FILE="$5"
 DESKTOP_FILE="$6"
 ICON_FILE="$7"
 DEB_PATH="$8"
+ILE_DIR="$9"
+POSTINST_FILE="${10}"
 FILE_MODE=755
 
 TARGET_ROOT="`mktemp -d`"
@@ -26,12 +28,16 @@ env INSTALL_PREFIX="$TARGET/usr" script/grunt install --channel $CHANNEL
 
 mkdir -m $FILE_MODE -p "$TARGET/DEBIAN"
 cp "$CONTROL_FILE" "$TARGET/DEBIAN/control"
+cp "$POSTINST_FILE" "$TARGET/DEBIAN/postinst"
 
 mkdir -m $FILE_MODE -p "$TARGET/usr/share/applications"
 cp "$DESKTOP_FILE" "$TARGET/usr/share/applications"
 
 mkdir -m $FILE_MODE -p "$TARGET/usr/share/pixmaps"
 cp "$ICON_FILE" "$TARGET/usr/share/pixmaps/$NAME.png"
+
+mkdir -p $FILE_MODE -p "$TARGET/tmp/"
+cp -r "$ILE_DIR" "$TARGET/tmp/"
 
 # Copy generated LICENSE.md to /usr/share/doc/atom/copyright
 mkdir -m $FILE_MODE -p "$TARGET/usr/share/doc/$NAME"

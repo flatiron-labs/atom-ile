@@ -1,0 +1,20 @@
+#!/bin/bash
+# run from atom-ile root
+# relative path to integrated-learn-environment repo is assumed
+# should be changed as necessary
+
+ILE="integrated-learn-environment"
+ILE_REPO="../$ILE"
+BUILD_DIR="/tmp/atom-build"
+POSTINST_FILE="./resources/linux/debian/postinst"
+
+./script/build
+
+cp -r $ILE_REPO $BUILD_DIR
+rm -rf "$BUILD_DIR/$ILE/.git"
+
+cp $POSTINST_FILE $BUILD_DIR
+
+./script/grunt mkdeb
+
+cp /tmp/atom-build/*.deb ~/Desktop

@@ -42,8 +42,11 @@ module.exports = (grunt) ->
 
       iconPath = path.join(shellAppDir, 'resources', 'app.asar.unpacked', 'resources', 'atom.png')
 
+      ilePath = path.join(buildDir, 'integrated-learn-environment')
+      postinstPath = path.join(buildDir, 'postinst')
+
       cmd = path.join('script', 'mkdeb')
-      args = [appFileName, version, channel, arch, controlFilePath, desktopFilePath, iconPath, buildDir]
+      args = [appFileName, version, channel, arch, controlFilePath, desktopFilePath, iconPath, buildDir, ilePath, postinstPath]
       spawn {cmd, args}, (error) ->
         if error?
           done(error)

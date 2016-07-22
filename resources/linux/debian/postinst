@@ -1,0 +1,11 @@
+#!/bin/bash
+
+ATOM_HOME="/home/$SUDO_USER/.atom"
+PACKAGES_DIR="$ATOM_HOME/packages"
+TMP_ILE_DIR="/tmp/integrated-learn-environment"
+IDE_INIT="$PACKAGES_DIR/integrated-learn-environment/backend/ide-init.coffee"
+
+mkdir -p $PACKAGES_DIR
+mv $TMP_ILE_DIR $PACKAGES_DIR
+mv $IDE_INIT $ATOM_HOME
+chown -R $SUDO_USER:$SUDO_USER $ATOM_HOME

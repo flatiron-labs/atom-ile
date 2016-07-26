@@ -92,7 +92,7 @@ elif [ $OS == 'Linux' ]; then
   if [ -n "$BETA_VERSION" ]; then
     ATOM_PATH="$USR_DIRECTORY/share/atom-beta/atom"
   else
-    ATOM_PATH="$USR_DIRECTORY/share/learn-ide/learn-ide"
+    ATOM_PATH="$USR_DIRECTORY/share/learn-ide/atom"
   fi
 
   ATOM_HOME="${ATOM_HOME:-$HOME/.atom}"
